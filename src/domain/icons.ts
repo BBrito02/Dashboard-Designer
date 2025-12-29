@@ -1,33 +1,36 @@
 import type { VisualVariable, GraphType } from '../domain/types';
 
+// Get the base URL configured in vite.config.ts (e.g., "/Dashboard-Designer/")
+const BASE = import.meta.env.BASE_URL;
+
 export const VISUAL_VAR_ICONS: Record<VisualVariable, string> = {
-  Color: '/icons/visvar_color.png',
-  Shape: '/icons/visvar_shape.png',
-  Size: '/icons/visvar_size.png',
-  Text: '/icons/visvar_text.png',
+  Color: `${BASE}icons/visvar_color.png`,
+  Shape: `${BASE}icons/visvar_shape.png`,
+  Size: `${BASE}icons/visvar_size.png`,
+  Text: `${BASE}icons/visvar_text.png`,
 };
 
 export const GRAPH_TYPE_ICONS: Record<GraphType, string> = {
-  Dispersion: '/icons/graphtype_dispersion.png',
-  Line: '/icons/graphtype_line.png',
-  MultipleLines: '/icons/graphtype_multiplelines.png',
-  Area: '/icons/graphtype_area.png',
-  Bars: '/icons/graphtype_bars.png',
-  PilledBars: '/icons/graphtype_piledbars.png',
-  Pilled100: '/icons/graphtype_piled100.png',
-  Gantt: '/icons/graphtype_gantt.png',
-  Dots: '/icons/graphtype_dots.png',
-  Map: '/icons/graphtype_map.png',
-  ColorMap: '/icons/graphtype_colormap.png',
-  Hexabin: '/icons/graphtype_hexabin.png',
-  Table: '/icons/graphtype_table.png',
-  HeatMap: '/icons/graphtype_heatmap.png',
-  Clock: '/icons/graphtype_clock.png',
+  Dispersion: `${BASE}icons/graphtype_dispersion.png`,
+  Line: `${BASE}icons/graphtype_line.png`,
+  MultipleLines: `${BASE}icons/graphtype_multiplelines.png`,
+  Area: `${BASE}icons/graphtype_area.png`,
+  Bars: `${BASE}icons/graphtype_bars.png`,
+  PilledBars: `${BASE}icons/graphtype_piledbars.png`,
+  Pilled100: `${BASE}icons/graphtype_piled100.png`,
+  Gantt: `${BASE}icons/graphtype_gantt.png`,
+  Dots: `${BASE}icons/graphtype_dots.png`,
+  Map: `${BASE}icons/graphtype_map.png`,
+  ColorMap: `${BASE}icons/graphtype_colormap.png`,
+  Hexabin: `${BASE}icons/graphtype_hexabin.png`,
+  Table: `${BASE}icons/graphtype_table.png`,
+  HeatMap: `${BASE}icons/graphtype_heatmap.png`,
+  Clock: `${BASE}icons/graphtype_clock.png`,
 };
 
 export const activationIcons = {
-  hover: '/icons/hover.png',
-  click: '/icons/click.png',
+  hover: `${BASE}icons/hover.png`,
+  click: `${BASE}icons/click.png`,
 } as const;
 
 export type ActivationKey = keyof typeof activationIcons;
