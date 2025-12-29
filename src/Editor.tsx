@@ -187,6 +187,26 @@ export default function Editor() {
     setEdges
   );
 
+  const LS_SIDEBAR_KEY = 'designer:sidemenu:collapsed';
+
+  const [isSidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      const item = localStorage.getItem(LS_SIDEBAR_KEY);
+      // Logic reversed compared to 'collapsed' -> if collapsed is true, open is false
+      return item ? !JSON.parse(item) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const handleSidebarToggle = useCallback(() => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem(LS_SIDEBAR_KEY, JSON.stringify(!next)); // Store 'collapsed' state
+      return next;
+    });
+  }, []);
+
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -1787,7 +1807,7 @@ export default function Editor() {
               zIndex: 10,
             }}
           >
-            <SideMenu />
+            <SideMenu isOpen={isSidebarOpen} onToggle={handleSidebarToggle} />
           </div>
           <div
             style={{
@@ -1959,7 +1979,16 @@ export default function Editor() {
               maxZoom={4}
             >
               <Background />
-              <Controls>
+              <Controls
+                style={{
+                  // If Open: 260px (Menu) + 7px (Margin) + 15px (Gap) = ~282px
+                  // If Closed: 15px (Gap)
+                  left: isSidebarOpen ? 265 : 5,
+                  bottom: 5,
+                  // Smooth slide animation matching the sidebar
+                  transition: 'left 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+                }}
+              >
                 <ControlButton onClick={() => setLassoMode((v) => !v)}>
                   {lassoMode ? <FaRegSquare /> : <FaHand />}
                 </ControlButton>

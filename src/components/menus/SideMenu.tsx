@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import type { NodeKind } from '../../domain/types';
 import { useDraggable } from '@dnd-kit/core';
 import type { IconType } from 'react-icons';
+import { useState } from 'react'; // Only for hover states now
 import {
   LuLayoutDashboard,
   LuInfo,
@@ -16,6 +15,7 @@ import {
   LuPanelRightClose,
 } from 'react-icons/lu';
 import { SectionTitle } from './sections';
+import type { NodeKind } from '../../domain/types';
 
 export type DragData = { kind: NodeKind; title?: string };
 
@@ -23,7 +23,6 @@ export type DragData = { kind: NodeKind; title?: string };
 const SIDEBAR_W = 260;
 const TILE_H = 80;
 const MARGIN = 7;
-const LS_KEY = 'designer:sidemenu:collapsed'; // Key for local storage
 
 type Section = {
   title: string;
@@ -91,22 +90,18 @@ function PaletteTile({
         cursor: 'grab',
         userSelect: 'none',
         WebkitUserSelect: 'none',
-
         background: isHovered ? '#f8fafc' : '#ffffff',
         border: isHovered ? '1px solid #94a3b8' : '1px solid #e2e8f0',
         borderRadius: 12,
-
         boxShadow: isHovered
           ? '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)'
           : '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
         padding: 12,
-
         opacity: isDragging ? 0.5 : 1,
         transition: 'all 0.2s ease',
         transform: isHovered && !isDragging ? 'translateY(-1px)' : 'none',
@@ -135,32 +130,18 @@ function PaletteTile({
   );
 }
 
-export default function SideMenu() {
-  // Initialize state from Local Storage
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      const item = localStorage.getItem(LS_KEY);
-      return item ? JSON.parse(item) : false;
-    } catch {
-      return false;
-    }
-  });
+// 1. Define Props
+type SideMenuProps = {
+  isOpen: boolean;
+  onToggle: () => void;
+};
 
+// 2. Accept Props
+export default function SideMenu({ isOpen, onToggle }: SideMenuProps) {
+  // 3. Derive internal variables from props
+  const collapsed = !isOpen;
   const width = collapsed ? 0 : SIDEBAR_W;
 
-  // Shared Toggle Logic
-  const handleToggle = () => {
-    const next = !collapsed;
-    setCollapsed(next);
-    localStorage.setItem(LS_KEY, JSON.stringify(next));
-
-    // --- REMOVED: window.dispatchEvent(...) ---
-    // The side menu should NOT notify the editor about its width,
-    // because the editor uses that event to move the top-right buttons
-    // which should only move for the Right-side menu.
-  };
-
-  // Common style for the toggle button
   const toggleButtonStyle: React.CSSProperties = {
     position: 'absolute',
     top: 6,
@@ -183,21 +164,14 @@ export default function SideMenu() {
       <aside
         className="sidebar no-scrollbar"
         style={{
-          // Dimensions
           width,
           height: collapsed ? 0 : `calc(100vh - ${MARGIN * 2}px)`,
-
-          // Position / Floating style
           marginTop: collapsed ? 0 : MARGIN,
           marginBottom: collapsed ? 0 : MARGIN,
           marginLeft: collapsed ? 0 : MARGIN,
-
-          // Visuals
           background: '#fafafa',
           border: collapsed ? 'none' : '1px solid #e2e8f0',
           borderRadius: collapsed ? 0 : 20,
-
-          // Behavior
           display: 'flex',
           flexDirection: 'column',
           overflowY: collapsed ? 'hidden' : 'auto',
@@ -208,7 +182,6 @@ export default function SideMenu() {
           boxShadow: collapsed ? 'none' : '0 4px 12px rgba(0,0,0,0.03)',
         }}
       >
-        {/* Header */}
         {!collapsed && (
           <div
             style={{
@@ -233,11 +206,9 @@ export default function SideMenu() {
             >
               Components
             </div>
-
-            {/* Close Button (Inside) */}
             <button
               type="button"
-              onClick={handleToggle}
+              onClick={onToggle}
               title="Collapse component menu"
               style={toggleButtonStyle}
             >
@@ -246,7 +217,6 @@ export default function SideMenu() {
           </div>
         )}
 
-        {/* Content */}
         {!collapsed && (
           <div
             style={{
@@ -258,7 +228,6 @@ export default function SideMenu() {
             {SECTIONS.map((sec) => (
               <div key={sec.title} style={{ marginBottom: 28 }}>
                 <SectionTitle>{sec.title}</SectionTitle>
-
                 <div
                   style={{
                     display: 'grid',
@@ -281,11 +250,10 @@ export default function SideMenu() {
         )}
       </aside>
 
-      {/* Floating Reopen Button (Outside) */}
       {collapsed && (
         <button
           type="button"
-          onClick={handleToggle}
+          onClick={onToggle}
           title="Expand component menu"
           style={{
             ...toggleButtonStyle,
