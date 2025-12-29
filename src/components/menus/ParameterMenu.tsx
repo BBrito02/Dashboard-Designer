@@ -7,6 +7,7 @@ import {
   SectionTitle,
   OptionsSection,
   type StyledListItem,
+  DescriptionSection,
 } from './sections';
 import { nanoid } from 'nanoid';
 import { useModal } from '../ui/ModalHost';
@@ -107,6 +108,13 @@ export default function ParameterMenu(p: ExtendedKindProps) {
         disabled={disabled}
       />
       <TypeField value="Parameter" />
+
+      <DescriptionSection
+        placeholder="Describe this parameter"
+        value={d.description}
+        disabled={disabled}
+        onChange={(val) => p.onChange({ description: val })}
+      />
 
       <OptionsSection
         title="Parameter options"

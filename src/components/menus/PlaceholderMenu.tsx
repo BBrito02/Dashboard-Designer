@@ -27,8 +27,6 @@ export default function PlaceholderMenu(p: KindProps) {
       {/* Type Section */}
       <TypeField value="Placeholder" />
 
-      <SectionTitle>Actions</SectionTitle>
-
       {/* Description Section */}
       <DescriptionSection
         placeholder="Describe this placeholder"

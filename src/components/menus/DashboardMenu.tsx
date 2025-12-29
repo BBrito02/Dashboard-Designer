@@ -5,6 +5,7 @@ import {
   TypeField,
   AddComponentSection,
   SectionTitle,
+  DescriptionSection,
 } from './sections';
 import { useModal } from '../ui/ModalHost';
 import { allowedChildKinds } from '../../domain/rules';
@@ -51,6 +52,13 @@ export default function DashboardMenu(p: KindProps) {
         disabled={disabled}
       />
       <TypeField value="Dashboard" />
+
+      <DescriptionSection
+        placeholder="Describe this dashboard"
+        value={d.description}
+        disabled={disabled}
+        onChange={(val) => p.onChange({ description: val })}
+      />
 
       <SectionTitle>Actions</SectionTitle>
       <AddComponentSection

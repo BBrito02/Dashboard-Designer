@@ -7,6 +7,7 @@ import {
   AddComponentSection,
   SectionTitle,
   type StyledListItem,
+  DescriptionSection,
 } from './sections';
 import { nanoid } from 'nanoid';
 import { useModal } from '../ui/ModalHost';
@@ -133,6 +134,13 @@ export default function TooltipMenu(p: ExtendedKindProps) {
         disabled={disabled}
       />
       <TypeField value="Tooltip" />
+
+      <DescriptionSection
+        placeholder="Describe this tooltip"
+        value={d.description}
+        disabled={disabled}
+        onChange={(val) => p.onChange({ description: val })}
+      />
 
       <SectionTitle>Actions</SectionTitle>
 

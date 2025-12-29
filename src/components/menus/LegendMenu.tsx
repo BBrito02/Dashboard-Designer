@@ -6,6 +6,7 @@ import {
   ListSection,
   SectionTitle,
   type StyledListItem,
+  DescriptionSection,
 } from './sections';
 import { nanoid } from 'nanoid';
 import { useModal } from '../ui/ModalHost';
@@ -105,6 +106,13 @@ export default function LegendMenu(p: ExtendedKindProps) {
         disabled={disabled}
       />
       <TypeField value="Legend" />
+
+      <DescriptionSection
+        placeholder="Describe this legend"
+        value={d.description}
+        disabled={disabled}
+        onChange={(val) => p.onChange({ description: val })}
+      />
 
       <SectionTitle>Actions</SectionTitle>
 

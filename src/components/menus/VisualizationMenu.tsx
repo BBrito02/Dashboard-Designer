@@ -7,6 +7,7 @@ import {
   AddComponentSection,
   SectionTitle,
   type StyledListItem,
+  DescriptionSection,
 } from './sections';
 import { nanoid } from 'nanoid';
 import { useModal } from '../ui/ModalHost';
@@ -156,6 +157,13 @@ export default function VisualizationMenu(p: ExtendedKindProps) {
         disabled={disabled}
       />
       <TypeField value="Visualization" />
+
+      <DescriptionSection
+        placeholder="Describe this visualization"
+        value={d.description}
+        disabled={disabled}
+        onChange={(val) => p.onChange({ description: val })}
+      />
 
       <SectionTitle>Actions</SectionTitle>
 
