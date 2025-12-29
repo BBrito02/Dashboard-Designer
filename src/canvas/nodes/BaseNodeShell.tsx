@@ -547,6 +547,11 @@ export default function BaseNodeShell({
             right: 8,
             zIndex: 5,
             pointerEvents: 'auto',
+            // ADDED FLEX PROPERTIES FOR ALIGNMENT:
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
           }}
           className="nodrag nopan"
         >
