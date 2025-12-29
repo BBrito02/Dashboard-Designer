@@ -8,7 +8,7 @@ import { getLocalImageSrc } from '../../utils/localStore';
 
 const GraphNode = (props: NodeProps<NodeData>) => {
   const { data, selected } = props;
-  const { graphType, previewImageId, perspectives } = data as any;
+  const { graphType, previewImageId } = data as any;
 
   // 1. Removed manual review mode logic.
   // BaseNodeShell now connects to ReviewContext automatically.
@@ -28,39 +28,6 @@ const GraphNode = (props: NodeProps<NodeData>) => {
       active = false;
     };
   }, [previewImageId]);
-
-  // Calculate perspective count
-  const perspectiveCount = Array.isArray(perspectives)
-    ? perspectives.length
-    : 0;
-
-  // Define the badge style to match BaseNodeShell's native header style
-  const perspectiveBadge =
-    perspectiveCount > 1 ? (
-      <span
-        title="Perspectives"
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: 20,
-          minWidth: 20,
-          padding: '0 4px',
-          borderRadius: 999,
-          fontWeight: 800,
-          fontSize: 10,
-          background: '#e2e8f0',
-          color: '#0f172a',
-          borderWidth: 1,
-          borderStyle: 'solid',
-          borderColor: '#cbd5e1',
-          marginRight: 4, // Spacing in case review badge is also present
-          cursor: 'default',
-        }}
-      >
-        P({perspectiveCount})
-      </span>
-    ) : null;
 
   const IconSrc =
     GRAPH_TYPE_ICONS[graphType as GraphType] || GRAPH_TYPE_ICONS.Line;
@@ -117,8 +84,6 @@ const GraphNode = (props: NodeProps<NodeData>) => {
       }}
       leftHandle={true}
       rightHandle={true}
-      // Inject the badge into the top-right overlay area
-      overlayTopRight={perspectiveBadge}
     />
   );
 };
