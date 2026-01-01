@@ -67,7 +67,6 @@ const ALLOWED_RESULTS: Partial<Record<NodeKind, InteractionResult[]>> = {
   Visualization: ['filter', 'highlight', 'dashboard'],
   Graph: ['filter', 'highlight', 'dashboard', 'link'],
   Tooltip: ['filter', 'highlight', 'dashboard', 'link'],
-  DataAction: ['filter', 'highlight'],
   Placeholder: [],
 };
 

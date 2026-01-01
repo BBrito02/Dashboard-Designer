@@ -11,7 +11,6 @@ import VisualizationMenu from './VisualizationMenu';
 import DashboardMenu from './DashboardMenu';
 import LegendMenu from './LegendMenu';
 import TooltipMenu from './TooltipMenu';
-// import DataActionMenu from './DataActionMenu';
 import PlaceholderMenu from './PlaceholderMenu';
 import GraphMenu from './GraphMenu';
 
@@ -24,7 +23,6 @@ export const MENUS: Partial<Record<NodeKind, (p: KindProps) => JSX.Element>> = {
   Filter: FilterMenu,
   Button: ButtonMenu,
   Parameter: ParameterMenu,
-  DataAction: BaseMenu,
   Placeholder: PlaceholderMenu,
   Graph: GraphMenu,
 };

@@ -27,7 +27,6 @@ const MIN_SIZE: Record<string, { w: number; h: number }> = {
   Button: { w: 140, h: 75 },
   Filter: { w: 170, h: 75 },
   Parameter: { w: 170, h: 75 },
-  DataAction: { w: 140, h: 75 },
   Placeholder: { w: 130, h: 40 },
   Graph: { w: 60, h: 40 },
 };

@@ -43,7 +43,6 @@ const ICON_MAP: Record<string, IconType> = {
   Filter: LuFilter,
   Parameter: LuSlidersHorizontal,
   Action: LuZap,
-  DataAction: LuZap,
   Placeholder: LuImageOff,
 
   // --- Interaction Results ---

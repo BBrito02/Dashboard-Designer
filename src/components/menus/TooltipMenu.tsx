@@ -108,7 +108,6 @@ export default function TooltipMenu(p: ExtendedKindProps) {
             'Button',
             'Filter',
             'Parameter',
-            'DataAction',
           ]}
           onCancel={closeModal}
           onSave={(payload) => {

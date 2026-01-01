@@ -41,8 +41,6 @@ function nodeTypeFor(kind: NodeKind): string {
       return 'filter';
     case 'Parameter':
       return 'parameter';
-    case 'DataAction':
-      return 'dataaction';
     case 'Placeholder':
       return 'placeholder';
     case 'Graph':
