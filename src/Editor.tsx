@@ -76,7 +76,6 @@ import LegendNode from './canvas/nodes/LegendNode';
 import ButtonNode from './canvas/nodes/ButtonNode';
 import FilterNode from './canvas/nodes/FilterNode';
 import ParameterNode from './canvas/nodes/ParameterNode';
-import DataActionNode from './canvas/nodes/DataActionNode';
 import PlaceholderNode from './canvas/nodes/PlaceholderNode';
 import GraphNode from './canvas/nodes/GraphNode';
 
@@ -100,7 +99,6 @@ const NODE_TYPES = {
   button: ButtonNode,
   filter: FilterNode,
   parameter: ParameterNode,
-  dataaction: DataActionNode,
   placeholder: PlaceholderNode,
   graph: GraphNode,
 };
@@ -121,8 +119,6 @@ export function nodeTypeFor(kind: NodeKind): keyof typeof NODE_TYPES {
       return 'filter';
     case 'Parameter':
       return 'parameter';
-    case 'DataAction':
-      return 'dataaction';
     case 'Placeholder':
       return 'placeholder';
     case 'Graph':

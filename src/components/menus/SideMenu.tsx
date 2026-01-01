@@ -8,7 +8,6 @@ import {
   LuMousePointerClick,
   LuFilter,
   LuSlidersHorizontal,
-  LuZap,
   LuImageOff,
   LuChartColumnDecreasing,
   LuPanelLeftClose,
@@ -49,7 +48,6 @@ const SECTIONS: Section[] = [
       { kind: 'Button', label: 'Button', Icon: LuMousePointerClick },
       { kind: 'Filter', label: 'Filter', Icon: LuFilter },
       { kind: 'Parameter', label: 'Parameter', Icon: LuSlidersHorizontal },
-      { kind: 'DataAction', label: 'Action', Icon: LuZap },
     ],
   },
   {

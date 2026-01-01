@@ -77,11 +77,7 @@ export type VisualizationCompKind =
   | 'Legend'
   | 'Graph';
 
-export type InteractionCompKind =
-  | 'Button'
-  | 'Filter'
-  | 'Parameter'
-  | 'DataAction';
+export type InteractionCompKind = 'Button' | 'Filter' | 'Parameter';
 
 export type NodeKind =
   | VisualizationCompKind
@@ -188,12 +184,6 @@ interface ParameterNodeData extends NodeDataBase {
   options?: string[];
 }
 
-interface DataActionNodeData extends NodeDataBase {
-  kind: 'DataAction';
-  actionType?: 'Filtering' | 'Highlight';
-  targetDataRef?: string;
-}
-
 interface PlaceholderNodeData extends NodeDataBase {
   kind: 'Placeholder';
   image?: string;
@@ -213,6 +203,5 @@ export type NodeData =
   | ButtonNodeData
   | FilterNodeData
   | ParameterNodeData
-  | DataActionNodeData
   | PlaceholderNodeData
   | GraphNodeData;

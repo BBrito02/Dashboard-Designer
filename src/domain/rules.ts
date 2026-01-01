@@ -15,7 +15,6 @@ const ALLOWED_TO: Readonly<Record<NodeKind, readonly NodeKind[]>> = {
   Button: [],
   Filter: [],
   Parameter: ['Filter'],
-  DataAction: [],
   Placeholder: [],
   Graph: [],
 } as const;
