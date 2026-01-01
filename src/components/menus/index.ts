@@ -1,6 +1,5 @@
 import type { NodeKind } from '../../domain/types';
 import type { KindProps } from './common';
-import { BaseMenu } from './common';
 
 // kind-specific menus
 import ButtonMenu from './ButtonMenu';
