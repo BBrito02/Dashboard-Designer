@@ -3,7 +3,6 @@ import type { IconType } from 'react-icons';
 import { useState } from 'react'; // Only for hover states now
 import {
   LuLayoutDashboard,
-  LuInfo,
   LuList,
   LuMousePointerClick,
   LuFilter,
@@ -38,7 +37,6 @@ const SECTIONS: Section[] = [
         label: 'Visualization',
         Icon: LuChartColumnDecreasing,
       },
-      { kind: 'Tooltip', label: 'Tooltip', Icon: LuInfo },
       { kind: 'Legend', label: 'Legend', Icon: LuList },
     ],
   },
