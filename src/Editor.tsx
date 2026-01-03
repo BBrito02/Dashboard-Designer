@@ -406,10 +406,6 @@ export default function Editor() {
             title: newTitle,
             badge: nextBadgeFor(sourceNode.data.kind, all),
             perspectives: nextPerspectives,
-            // Logic:
-            // 1. If override is present (Graph popup), use it.
-            // 2. If not, try to inherit (e.g. if we allowed cloning graphs without popup).
-            // 3. Otherwise undefined.
             graphType:
               graphTypeOverride ?? sourceNode.data.graphType ?? undefined,
             visualVars: [],
@@ -417,9 +413,6 @@ export default function Editor() {
             interactions: [],
             tooltips: [],
             attachedTo: (sourceNode.data as any).attachedTo,
-            // Logic:
-            // If we changed the type (override), we must clear the old preview image.
-            // If we are just cloning, we keep it.
             previewImageId: graphTypeOverride
               ? undefined
               : (sourceNode.data as any).previewImageId,
@@ -453,23 +446,9 @@ export default function Editor() {
         return [...updatedNodes, newNode];
       });
 
-      setEdges((eds) => {
-        const newEdges: AppEdge[] = [];
-        eds.forEach((e) => {
-          if (e.target === sourceId) {
-            newEdges.push({
-              ...e,
-              id: nanoid(),
-              target: newId,
-              targetHandle: e.targetHandle
-                ? e.targetHandle.replace(sourceId, newId)
-                : null,
-              hidden: false,
-            });
-          }
-        });
-        return [...eds, ...newEdges];
-      });
+      // --- REMOVED: Edge cloning logic ---
+      // Previously, we duplicated incoming edges for the new perspective.
+      // We removed this so interactions stay attached ONLY to the original node.
 
       requestAnimationFrame(() => setSelectedId(newId));
     },
