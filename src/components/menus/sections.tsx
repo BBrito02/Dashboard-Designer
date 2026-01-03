@@ -618,17 +618,31 @@ export function OptionsSection({
 }) {
   const [input, setInput] = useState('');
 
+  // Helper to safely access items array
+  const currentItems = items ?? [];
+
   const add = () => {
     const v = input.trim();
     if (!v) return;
-    onChange([...(items ?? []), v]);
+
+    // --- CHANGE: Check for duplicates before adding ---
+    if (currentItems.includes(v)) {
+      return;
+    }
+
+    onChange([...currentItems, v]);
     setInput('');
   };
 
   const remove = (idx: number) => {
-    const next = items.filter((_, i) => i !== idx);
+    const next = currentItems.filter((_, i) => i !== idx);
     onChange(next);
   };
+
+  // Check if current input matches an existing item
+  const isDuplicate = currentItems.includes(input.trim());
+  // Disable button if empty, disabled, or duplicate
+  const isButtonDisabled = disabled || !input.trim() || isDuplicate;
 
   return (
     <div>
@@ -658,12 +672,13 @@ export function OptionsSection({
         <button
           type="button"
           onClick={add}
-          disabled={disabled || !input.trim()}
+          disabled={isButtonDisabled} // --- CHANGE: use updated disabled logic
           style={{
             ...roundIconBtn,
-            opacity: disabled || !input.trim() ? 0.6 : 1,
+            opacity: isButtonDisabled ? 0.6 : 1,
+            cursor: isButtonDisabled ? 'not-allowed' : 'pointer', // Optional: improve UX
           }}
-          title={addTooltip}
+          title={isDuplicate ? 'Option already exists' : addTooltip}
         >
           <LuPlus size={16} />
         </button>
@@ -671,7 +686,7 @@ export function OptionsSection({
 
       <div style={{ marginTop: 8 }}>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {items.map((it, i) => (
+          {currentItems.map((it, i) => (
             <span
               key={`${it}-${i}`}
               style={{

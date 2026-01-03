@@ -1,5 +1,5 @@
 import type { KindProps } from './common';
-import type { DataItem, Interaction } from '../../domain/types';
+import type { Interaction } from '../../domain/types';
 import {
   NameField,
   TypeField,
@@ -9,9 +9,6 @@ import {
   type StyledListItem,
   DescriptionSection,
 } from './sections';
-import { nanoid } from 'nanoid';
-import { useModal } from '../ui/ModalHost';
-import DataPopup from '../popups/DataPopup';
 
 type ExtendedKindProps = KindProps & {
   nodeNames?: Record<string, string>;
@@ -20,7 +17,6 @@ type ExtendedKindProps = KindProps & {
 export default function ParameterMenu(p: ExtendedKindProps) {
   const d: any = p.node.data;
   const disabled = p.disabled;
-  const { openModal, closeModal } = useModal();
 
   const handleToggleHidden = (
     category: 'data' | 'interactions',
@@ -34,19 +30,6 @@ export default function ParameterMenu(p: ExtendedKindProps) {
       })
     );
   };
-
-  const toDataItems = (list?: (string | DataItem)[]): DataItem[] =>
-    Array.isArray(list)
-      ? list.map((v) => {
-          if (typeof v === 'string') {
-            return { id: nanoid(), name: v, dtype: 'Other' };
-          }
-          if (v && !v.id) {
-            return { ...v, id: nanoid() };
-          }
-          return v;
-        })
-      : [];
 
   const interactions: Interaction[] = Array.isArray(d.interactions)
     ? (d.interactions as Interaction[])
@@ -95,7 +78,6 @@ export default function ParameterMenu(p: ExtendedKindProps) {
     }
   });
 
-  const dataList = d.data as (string | DataItem)[] | undefined;
   const options = d.options as string[] | undefined;
 
   return (
@@ -124,48 +106,6 @@ export default function ParameterMenu(p: ExtendedKindProps) {
       />
 
       <SectionTitle>Actions</SectionTitle>
-
-      <ListSection
-        title="Data list"
-        items={dataList ?? []}
-        onAdd={() =>
-          openModal({
-            title: 'Data fields',
-            node: (
-              <DataPopup
-                initial={toDataItems(dataList)}
-                onCancel={closeModal}
-                onSave={(items: DataItem[]) => {
-                  p.onChange({
-                    data: items,
-                  } as any);
-                  closeModal();
-                }}
-              />
-            ),
-          })
-        }
-        onItemClick={(index) => {
-          openModal({
-            title: 'Data fields',
-            node: (
-              <DataPopup
-                initial={toDataItems(dataList)}
-                initialSelectedIndex={index}
-                onCancel={closeModal}
-                onSave={(items: DataItem[]) => {
-                  p.onChange({
-                    data: items,
-                  } as any);
-                  closeModal();
-                }}
-              />
-            ),
-          });
-        }}
-        addTooltip="Associate data"
-        disabled={disabled}
-      />
 
       <ListSection
         title="Interaction list"

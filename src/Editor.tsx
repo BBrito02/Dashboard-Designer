@@ -694,6 +694,19 @@ export default function Editor() {
         }
       }
 
+      // --- 1. Identify Removed Parameter Options ---
+      let removedParamOptions: string[] = [];
+      if (patchAny.options) {
+        const node = nodes.find((n) => n.id === id);
+        if (node?.data.kind === 'Parameter') {
+          const oldOpts = (node.data as any).options || [];
+          const newOpts = patchAny.options as string[];
+          removedParamOptions = oldOpts.filter(
+            (o: string) => !newOpts.includes(o)
+          );
+        }
+      }
+
       setNodes((nds) => {
         const target = nds.find((n) => n.id === id);
         if (!target) return nds;
@@ -724,17 +737,85 @@ export default function Editor() {
         }
 
         return nds.map((n) => {
-          if (n.id === id) {
-            return { ...n, data: { ...n.data, ...patch } };
+          let nextNode = n;
+
+          // Apply patch to the target node
+          if (nextNode.id === id) {
+            nextNode = {
+              ...nextNode,
+              data: { ...nextNode.data, ...patch } as any,
+            };
           }
-          if (parentUpdate && n.id === parentUpdate.id) {
-            const currentTooltips = (n.data as any).tooltips || [];
+
+          // Handle Tooltip parent renaming
+          if (parentUpdate && nextNode.id === parentUpdate.id) {
+            const currentTooltips = (nextNode.data as any).tooltips || [];
             const nextTooltips = currentTooltips.map((t: string) =>
               t === parentUpdate!.oldLabel ? parentUpdate!.newLabel : t
             );
-            return { ...n, data: { ...n.data, tooltips: nextTooltips } };
+            nextNode = {
+              ...nextNode,
+              data: {
+                ...nextNode.data,
+                tooltips: nextTooltips,
+              } as any,
+            };
           }
-          return n;
+
+          // --- 2. Handle Removed Parameter Options Side Effects ---
+          if (removedParamOptions.length > 0 && nextNode.id !== id) {
+            const incoming = edges.filter(
+              (e) =>
+                e.source === id &&
+                e.target === nextNode.id &&
+                e.targetHandle?.startsWith('data:')
+            );
+
+            if (incoming.length > 0) {
+              const d = nextNode.data as any;
+              if (Array.isArray(d.data)) {
+                let dataChanged = false;
+                const nextDataList = d.data.map((item: any) => {
+                  const isBound = incoming.some((e) => {
+                    const parts = e.targetHandle?.split(':');
+                    return parts && parts[1] === item.id;
+                  });
+
+                  if (isBound) {
+                    for (const opt of removedParamOptions) {
+                      const suffix = ` = ${opt}`;
+                      if (item.name.endsWith(suffix)) {
+                        const base = item.name.slice(0, -suffix.length);
+                        dataChanged = true;
+
+                        // --- CHANGED LOGIC START ---
+                        // Instead of reverting to '?', check for a new valid option
+                        const newOptions = (patchAny.options as string[]) ?? [];
+                        const fallback =
+                          newOptions.length > 0 ? newOptions[0] : '?';
+
+                        return { ...item, name: `${base} = ${fallback}` };
+                        // --- CHANGED LOGIC END ---
+                      }
+                    }
+                  }
+                  return item;
+                });
+
+                if (dataChanged) {
+                  nextNode = {
+                    ...nextNode,
+                    data: {
+                      ...nextNode.data,
+                      data: nextDataList,
+                    } as any,
+                  };
+                }
+              }
+            }
+          }
+
+          return nextNode;
         }) as AppNode[];
       });
     },
