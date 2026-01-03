@@ -1614,7 +1614,7 @@ export default function Editor() {
       )
     : 0;
 
-  // --- HIGHLIGHT & TOOLTIP & DEPENDENCY VISIBILITY LOGIC ---
+  // --- HIGHLIGHT & TOOLTIP VISIBILITY LOGIC ---
   useEffect(() => {
     setNodes((nds) => {
       // 1. Determine highlighted nodes from selected edge
@@ -1636,7 +1636,7 @@ export default function Editor() {
         }
       }
 
-      // 2. Initial Pass: Update Highlights
+      // 2. Update node highlight state
       const next = nds.map((n) => {
         const isHighlighted = n.id === highlightSrc || n.id === highlightTgt;
         const currentHighlight = !!n.data?.highlighted;
@@ -1650,13 +1650,9 @@ export default function Editor() {
         return n;
       });
 
-      // --- Pre-calculation for "Keep Alive" logic ---
-      // We want to keep a Tooltip visible if the currently selected node is a dependent of it.
-      // Dependence is defined as:
-      // 1. Structural Child (ParentNode)
-      // 2. Interaction Target (Edge Source -> Target)
-      // We perform a reverse traversal (BFS) starting from the selected node to find all its "ancestors".
-
+      // --- 3. Pre-calculation for "Keep Alive" logic ---
+      // This identifies if the currently selected node is a descendant of a Tooltip.
+      // If so, we add that Tooltip to 'activeAncestors' so we can force it to stay visible.
       const nodeMap = new Map(next.map((n) => [n.id, n]));
       const sourcesByTarget = new Map<string, string[]>();
 
@@ -1676,13 +1672,13 @@ export default function Editor() {
           const curr = nodeMap.get(currId);
           if (!curr) continue;
 
-          // 1. Structural Parent
+          // A. Structural Parent (Child inside Tooltip)
           if (curr.parentNode && !activeAncestors.has(curr.parentNode)) {
             activeAncestors.add(curr.parentNode);
             queue.push(curr.parentNode);
           }
 
-          // 2. Incoming Edge Sources (Interaction or Tooltip links)
+          // B. Incoming Edge Sources (Dashboard targeted by Button)
           const sources = sourcesByTarget.get(currId);
           if (sources) {
             for (const src of sources) {
@@ -1695,7 +1691,7 @@ export default function Editor() {
         }
       }
 
-      // --- Tooltip Logic (Base Visibility) ---
+      // --- 4. Tooltip visibility logic ---
       const groups = new Map<string, AppNode[]>();
       const rawVisibility = new Set<string>();
 
@@ -1760,7 +1756,7 @@ export default function Editor() {
             ? isDescendant(selNode as AppNode, attachedTo, next as AppNode[])
             : false;
 
-        // --- NEW: Check if this tooltip is an ancestor of the selection ---
+        // Check if this tooltip is an ancestor of the selection
         const isAncestorOfSelection = activeAncestors.has(tip.id);
 
         if (
@@ -1774,7 +1770,7 @@ export default function Editor() {
         }
       }
 
-      // Apply Tooltip Group Logic
+      // Apply Base Tooltip visibility
       groups.forEach((groupNodes) => {
         const candidates = groupNodes.filter((n) => rawVisibility.has(n.id));
 
@@ -1800,47 +1796,67 @@ export default function Editor() {
         });
       });
 
-      // 3. Recursive Dependency Check
+      // --- 5. Tooltip Subgraph Logic ---
+      // Propagate 'hidden' state ONLY to nodes that belong to a Tooltip chain.
+
       const incomingInteractions = new Map<string, string[]>();
+      const outgoingInteractions = new Map<string, string[]>();
+
       edges.forEach((e) => {
-        if (e.type === 'interaction') {
-          if (!incomingInteractions.has(e.target)) {
+        if (e.type === 'interaction' || e.type === 'tooltip') {
+          if (!incomingInteractions.has(e.target))
             incomingInteractions.set(e.target, []);
-          }
           incomingInteractions.get(e.target)!.push(e.source);
+
+          if (!outgoingInteractions.has(e.source))
+            outgoingInteractions.set(e.source, []);
+          outgoingInteractions.get(e.source)!.push(e.target);
         }
       });
 
-      // Initialize visibility map
-      const isHiddenMap = new Map<string, boolean>();
-
+      // A. Identify the "Tooltip Subgraph" (All nodes descending from Tooltips)
+      const tooltipMap = new Map<string, boolean>();
       next.forEach((n) => {
-        // A. Tooltip state is authoritative from step above
         if (n.data?.kind === 'Tooltip') {
-          isHiddenMap.set(n.id, !!n.hidden);
-          return;
+          tooltipMap.set(n.id, !!n.hidden);
         }
+      });
 
-        // B. Child of Tooltip -> Optimistically Visible
-        if (n.parentNode) {
-          const parent = nodeMap.get(n.parentNode);
-          if (parent?.data?.kind === 'Tooltip') {
-            isHiddenMap.set(n.id, false);
-            return;
+      const tooltipSubgraph = new Set<string>();
+      const queue: string[] = [];
+
+      // Seed: Direct children of Tooltips
+      next.forEach((n) => {
+        if (n.parentNode && tooltipMap.has(n.parentNode)) {
+          tooltipSubgraph.add(n.id);
+          queue.push(n.id);
+        }
+      });
+
+      // BFS: Find all downstream targets (e.g. Dashboard created by Button)
+      let head = 0;
+      while (head < queue.length) {
+        const curr = queue[head++];
+        const targets = outgoingInteractions.get(curr);
+        if (targets) {
+          for (const t of targets) {
+            if (!tooltipSubgraph.has(t)) {
+              tooltipSubgraph.add(t);
+              queue.push(t);
+            }
           }
         }
+      }
 
-        // C. Target of Interaction -> Optimistically Visible (unless strictly managed by perspectives)
-        if (incomingInteractions.has(n.id)) {
-          const hasPerspectives = (n.data?.perspectives?.length ?? 0) > 1;
-          if (!hasPerspectives) {
-            isHiddenMap.set(n.id, false);
-            return;
-          }
+      // B. Propagate Visibility within the Subgraph
+      const isHiddenMap = new Map<string, boolean>();
+      next.forEach((n) => isHiddenMap.set(n.id, !!n.hidden));
+
+      // Initial Sync for seeds (Direct children adopt parent Tooltip state)
+      next.forEach((n) => {
+        if (n.parentNode && tooltipMap.has(n.parentNode)) {
+          isHiddenMap.set(n.id, tooltipMap.get(n.parentNode)!);
         }
-
-        // D. Default
-        isHiddenMap.set(n.id, !!n.hidden);
       });
 
       let changed = true;
@@ -1852,27 +1868,24 @@ export default function Editor() {
         iter++;
 
         for (const n of next) {
+          // SKIP nodes that are not part of the Tooltip flow
+          if (!tooltipSubgraph.has(n.id)) continue;
+
           const currentHidden = isHiddenMap.get(n.id)!;
           let nextHidden = currentHidden;
 
-          // Rule 1: Child inherits Parent's hidden state
-          if (n.parentNode) {
-            const parentHidden = isHiddenMap.get(n.parentNode);
-            if (parentHidden) {
-              nextHidden = true;
-            }
+          // Rule A: Structural Parent
+          if (n.parentNode && isHiddenMap.has(n.parentNode)) {
+            nextHidden = isHiddenMap.get(n.parentNode)!;
           }
-
-          // Rule 2: Interaction Dependency
-          if (!nextHidden) {
+          // Rule B: Interaction Dependencies
+          else {
             const sources = incomingInteractions.get(n.id);
             if (sources && sources.length > 0) {
               const allSourcesHidden = sources.every((srcId) =>
                 isHiddenMap.get(srcId)
               );
-              if (allSourcesHidden) {
-                nextHidden = true;
-              }
+              nextHidden = allSourcesHidden;
             }
           }
 
@@ -1885,7 +1898,7 @@ export default function Editor() {
 
       return next.map((n) => {
         const finalHidden = isHiddenMap.get(n.id);
-        if (n.hidden !== finalHidden) {
+        if (finalHidden !== undefined && n.hidden !== finalHidden) {
           return { ...n, hidden: finalHidden };
         }
         return n;
