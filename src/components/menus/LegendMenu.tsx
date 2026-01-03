@@ -5,12 +5,14 @@ import {
   TypeField,
   ListSection,
   SectionTitle,
+  AddComponentSection,
   type StyledListItem,
   DescriptionSection,
 } from './sections';
 import { nanoid } from 'nanoid';
 import { useModal } from '../ui/ModalHost';
 import DataPopup from '../popups/DataPopup';
+import AddComponentPopup from '../popups/ComponentPopup';
 
 type ExtendedKindProps = KindProps & {
   nodeNames?: Record<string, string>;
@@ -96,6 +98,25 @@ export default function LegendMenu(p: ExtendedKindProps) {
 
   const dataList = d.data as (string | DataItem)[] | undefined;
 
+  const handleAddComponent = () => {
+    openModal({
+      title: 'Component Menu',
+      node: (
+        <AddComponentPopup
+          kinds={['VisualVariable']} // Restrict to Visual Variables only
+          initialVisualVars={d.visualVars ?? []}
+          onCancel={closeModal}
+          onSave={(payload) => {
+            if (payload.kind === 'VisualVariable') {
+              p.onChange({ visualVars: payload.variables });
+              closeModal();
+            }
+          }}
+        />
+      ),
+    });
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ fontWeight: 700, textAlign: 'center' }}>MENU</div>
@@ -115,6 +136,12 @@ export default function LegendMenu(p: ExtendedKindProps) {
       />
 
       <SectionTitle>Actions</SectionTitle>
+
+      <AddComponentSection
+        title="Add component"
+        disabled={disabled}
+        onAdd={handleAddComponent}
+      />
 
       <ListSection
         title="Data list"
