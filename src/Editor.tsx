@@ -1252,8 +1252,14 @@ export default function Editor() {
               });
 
               const targetHandle = `${tipId}:target`;
+
+              // --- FIX: Explicitly target the component interaction handle ---
+              // If attaching to 'viz', use the {id}:act:{trigger} handle format
+              // derived from BaseNodeShell -> ClickHoverPorts
               const sourceHandle =
-                attachRef === 'viz' ? null : `data:${attachRef}:${activation}`;
+                attachRef === 'viz'
+                  ? `${vizId}:act:${activation}`
+                  : `data:${attachRef}:${activation}`;
 
               setEdges((eds) => [
                 ...eds,
