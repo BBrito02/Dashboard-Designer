@@ -247,6 +247,9 @@ export default function BaseNodeShell({
     unresolved: reviewUnresolvedCount,
   } = useReviews(id);
 
+  const interactionCount = (data as any).interactionEdgeCount ?? 0;
+  const interactionsHidden = !!(data as any).interactionsHidden;
+
   // --- REVERTED: Always show footer items (Data Attributes) ---
   const visibleFooterItems = footerItems;
 
@@ -463,6 +466,32 @@ export default function BaseNodeShell({
                   }}
                 >
                   T({tooltipCount})
+                </span>
+              )}
+              {/* Interaction Counter Badge */}
+              {interactionsHidden && interactionCount > 0 && (
+                <span
+                  title={`${interactionCount} hidden interaction edge${
+                    interactionCount !== 1 ? 's' : ''
+                  }`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: 20,
+                    minWidth: 20,
+                    padding: '0 4px',
+                    borderRadius: 999,
+                    fontWeight: 800,
+                    fontSize: 10,
+                    background: '#e2e8f0',
+                    color: '#0f172a',
+                    borderWidth: 1,
+                    borderStyle: 'solid',
+                    borderColor: '#cbd5e1',
+                  }}
+                >
+                  I({interactionCount})
                 </span>
               )}
               {perspectiveCount > 1 && (

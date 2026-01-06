@@ -23,6 +23,8 @@ import {
   FaRegSquare,
   FaUndo,
   FaRedo,
+  FaEye,
+  FaEyeSlash,
 } from 'react-icons/fa';
 import { FaHand } from 'react-icons/fa6';
 
@@ -210,6 +212,67 @@ export default function Editor() {
   const [menuWidth, setMenuWidth] = useState<number>(PANEL_WIDTH);
   const [lassoMode, setLassoMode] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
+
+  const [showInteractions, setShowInteractions] = useState(true);
+  useEffect(() => {
+    setNodes((currentNodes) => {
+      // 1. Calculate stats per node (Count total edges, and how many are visible)
+      const nodeStats = new Map<string, { total: number; visible: number }>();
+
+      for (const edge of edges) {
+        if (edge.type !== 'interaction') continue;
+
+        if (!nodeStats.has(edge.source)) {
+          nodeStats.set(edge.source, { total: 0, visible: 0 });
+        }
+
+        const stats = nodeStats.get(edge.source)!;
+        stats.total += 1;
+        // Check if edge is locally visible
+        if (!edge.hidden) {
+          stats.visible += 1;
+        }
+      }
+
+      // 2. Update Nodes with new counts and hidden status
+      return currentNodes.map((n) => {
+        const stats = nodeStats.get(n.id) || { total: 0, visible: 0 };
+
+        // Badge Logic:
+        // Show badge if:
+        // A) Global toggle is OFF (everything is hidden)
+        // B) Global toggle is ON, but ALL local edges are hidden (visible == 0)
+
+        const isGloballyHidden = !showInteractions;
+        const isLocallyHidden = stats.total > 0 && stats.visible === 0;
+
+        // The badge flag should be true if we have edges AND they are effectively hidden
+        const shouldReportHidden =
+          stats.total > 0 && (isGloballyHidden || isLocallyHidden);
+
+        // Optimization: Only update reference if data changed
+        const currentCount = (n.data as any).interactionEdgeCount;
+        const currentHidden = (n.data as any).interactionsHidden;
+
+        if (
+          currentCount === stats.total &&
+          currentHidden === shouldReportHidden
+        ) {
+          return n;
+        }
+
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            interactionEdgeCount: stats.total,
+            interactionsHidden: shouldReportHidden,
+          },
+        };
+      });
+    });
+  }, [edges, showInteractions, setNodes]);
+
   const [reviewsByTarget, setReviewsByTarget] = useState<
     Record<string, Review[]>
   >({});
@@ -1968,23 +2031,32 @@ export default function Editor() {
 
   const visibleEdges = useMemo(
     () =>
-      edges.map((e) => {
-        const rs = reviewsByTarget[e.id] ?? [];
-        return {
-          ...e,
-          style:
-            e.type === 'interaction' ? { ...e.style, opacity: 1 } : e.style,
-          // --- CHANGED: Respect e.hidden from toggle listener ---
-          hidden: e.hidden,
-          data: {
-            ...(e.data || {}),
-            reviewMode,
-            reviewUnresolvedCount: rs.filter((r) => !r.resolved).length,
-            reviewCount: rs.length,
-          },
-        };
-      }),
-    [edges, reviewsByTarget, reviewMode]
+      edges
+        // 1. FILTER: Completely remove interaction edges if the global toggle is off
+        .filter((e) => {
+          if (!showInteractions && e.type === 'interaction') {
+            return false;
+          }
+          return true;
+        })
+        // 2. MAP: Apply review data and local hidden states to the remaining edges
+        .map((e) => {
+          const rs = reviewsByTarget[e.id] ?? [];
+          return {
+            ...e,
+            style:
+              e.type === 'interaction' ? { ...e.style, opacity: 1 } : e.style,
+            // Only respect local hidden state here (e.g. from the right-click menu)
+            hidden: e.hidden,
+            data: {
+              ...(e.data || {}),
+              reviewMode,
+              reviewUnresolvedCount: rs.filter((r) => !r.resolved).length,
+              reviewCount: rs.length,
+            },
+          };
+        }),
+    [edges, reviewsByTarget, reviewMode, showInteractions]
   );
 
   const selectedNode = useMemo(
@@ -2235,6 +2307,16 @@ export default function Editor() {
               >
                 <ControlButton onClick={() => setLassoMode((v) => !v)}>
                   {lassoMode ? <FaRegSquare /> : <FaHand />}
+                </ControlButton>
+                <ControlButton
+                  onClick={() => setShowInteractions((v) => !v)}
+                  title={
+                    showInteractions
+                      ? 'Hide Interaction Edges'
+                      : 'Show Interaction Edges'
+                  }
+                >
+                  {showInteractions ? <FaEye /> : <FaEyeSlash />}
                 </ControlButton>
               </Controls>
             </ReactFlow>

@@ -95,6 +95,8 @@ interface NodeDataBase {
   interactions?: Interaction[];
   perspectives?: string[];
   highlighted?: boolean;
+  interactionsHidden?: boolean;
+  interactionEdgeCount?: number;
   collapsedCategories?: {
     data?: boolean;
     interactions?: boolean;
