@@ -182,6 +182,7 @@ interface FilterNodeData extends NodeDataBase {
 interface ParameterNodeData extends NodeDataBase {
   kind: 'Parameter';
   options?: string[];
+  value?: string;
 }
 
 interface PlaceholderNodeData extends NodeDataBase {

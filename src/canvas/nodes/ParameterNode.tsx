@@ -62,7 +62,7 @@ const ParameterNode = (p: NodeProps<NodeData>) => {
             }}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            defaultValue=""
+            value={d.value ?? ''}
             onChange={handleChange}
             style={selectStyle}
           >

@@ -1298,13 +1298,21 @@ export default function Editor() {
   useEffect(() => {
     const onParamChange = (e: Event) => {
       const { nodeId, value } = (e as CustomEvent).detail;
-      if (!nodeId || !value) return;
-
-      const connectedEdges = edges.filter((ed) => ed.source === nodeId);
-      if (connectedEdges.length === 0) return;
+      if (!nodeId) return; // Allow value to be empty string if needed
 
       takeSnapshot();
       let nodesMap = new Map(nodes.map((n) => [n.id, { ...n }]));
+
+      // 1. Update the Parameter Node itself (Persist the selection)
+      const sourceNode = nodesMap.get(nodeId);
+      if (sourceNode) {
+        // We update the data object to include the new 'value'
+        sourceNode.data = { ...sourceNode.data, value } as any;
+        nodesMap.set(nodeId, sourceNode);
+      }
+
+      // 2. Update Connected Targets (Existing logic)
+      const connectedEdges = edges.filter((ed) => ed.source === nodeId);
 
       connectedEdges.forEach((edge) => {
         const targetId = edge.target;
@@ -1333,7 +1341,14 @@ export default function Editor() {
           }
         }
       });
+
+      // 3. Apply all node updates
       setNodes(Array.from(nodesMap.values()));
+
+      // 4. Force Visibility Refresh (for Tooltips)
+      if (connectedEdges.length > 0) {
+        setEdges((eds) => [...eds]);
+      }
     };
 
     window.addEventListener(
