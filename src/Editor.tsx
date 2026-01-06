@@ -2552,6 +2552,8 @@ export default function Editor() {
                     const edgeData = (edgeToRemove.data || {}) as any;
                     const interactionId = edgeData.interactionId;
                     const targetId = edgeData.targetId ?? edgeToRemove.target;
+                    // 1. Capture the data reference (if any)
+                    const targetDataRef = edgeData.targetDataRef;
                     const label = edgeData.label;
                     const sourceId = edgeToRemove.source;
 
@@ -2572,25 +2574,72 @@ export default function Editor() {
                           interactions = d.interactions
                             .map((ix: any) => {
                               if (ix.id !== interactionId) return ix;
-                              const currentTargets = Array.isArray(ix.targets)
-                                ? ix.targets
-                                : [];
-                              const newTargets = currentTargets.filter(
-                                (tid: string) => tid !== targetId
-                              );
+
+                              let newTargets: string[] = [];
+                              let newTargetDetails = ix.targetDetails;
+
+                              // 2. Handle targetDetails if present (The fix)
+                              if (
+                                Array.isArray(ix.targetDetails) &&
+                                ix.targetDetails.length > 0
+                              ) {
+                                newTargetDetails = ix.targetDetails.filter(
+                                  (detail: any) => {
+                                    const sameId = detail.targetId === targetId;
+                                    // If a data ref exists on the edge, we must match it.
+                                    // If the edge has no data ref, we match details that have no data ref.
+                                    const sameRef =
+                                      (detail.targetDataRef ?? undefined) ===
+                                      (targetDataRef ?? undefined);
+
+                                    // Remove if BOTH match
+                                    return !(sameId && sameRef);
+                                  }
+                                );
+
+                                // Rebuild the simple ID list from the remaining details
+                                newTargets = newTargetDetails.map(
+                                  (t: any) => t.targetId
+                                );
+
+                                if (
+                                  newTargetDetails.length !==
+                                  ix.targetDetails.length
+                                ) {
+                                  changed = true;
+                                }
+                              } else {
+                                // Fallback for legacy interactions without details
+                                const currentTargets = Array.isArray(ix.targets)
+                                  ? ix.targets
+                                  : [];
+                                newTargets = currentTargets.filter(
+                                  (tid: string) => tid !== targetId
+                                );
+                                if (
+                                  newTargets.length !== currentTargets.length
+                                ) {
+                                  changed = true;
+                                }
+                              }
+
                               if (newTargets.length === 0) {
                                 changed = true;
-                                return null;
+                                return null; // Remove interaction if no targets left
                               }
-                              if (newTargets.length !== currentTargets.length) {
-                                changed = true;
-                                return { ...ix, targets: newTargets };
+
+                              if (changed) {
+                                return {
+                                  ...ix,
+                                  targets: newTargets,
+                                  targetDetails: newTargetDetails,
+                                };
                               }
                               return ix;
                             })
                             .filter(Boolean);
                         } else {
-                          // Fallback
+                          // Fallback for non-ID interactions (legacy behavior)
                           interactions = d.interactions.filter((ix: any) => {
                             const currentTargets = Array.isArray(ix.targets)
                               ? ix.targets
