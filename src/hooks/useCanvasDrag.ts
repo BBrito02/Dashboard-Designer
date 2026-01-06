@@ -72,7 +72,7 @@ export function useCanvasDrag(
     x: number;
     y: number;
   } | null>(null);
-  const [cursorPoint, setCursorPoint] = useState<{
+  const [, setCursorPoint] = useState<{
     x: number;
     y: number;
   } | null>(null);
