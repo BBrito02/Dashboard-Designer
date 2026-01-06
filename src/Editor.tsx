@@ -1636,8 +1636,6 @@ export default function Editor() {
       });
 
       // --- 3. Pre-calculation for "Keep Alive" logic ---
-      // This identifies if the currently selected node is a descendant of a Tooltip.
-      // If so, we add that Tooltip to 'activeAncestors' so we can force it to stay visible.
       const nodeMap = new Map(next.map((n) => [n.id, n]));
       const sourcesByTarget = new Map<string, string[]>();
 
@@ -1657,13 +1655,13 @@ export default function Editor() {
           const curr = nodeMap.get(currId);
           if (!curr) continue;
 
-          // A. Structural Parent (Child inside Tooltip)
+          // A. Structural Parent
           if (curr.parentNode && !activeAncestors.has(curr.parentNode)) {
             activeAncestors.add(curr.parentNode);
             queue.push(curr.parentNode);
           }
 
-          // B. Incoming Edge Sources (Dashboard targeted by Button)
+          // B. Incoming Edge Sources
           const sources = sourcesByTarget.get(currId);
           if (sources) {
             for (const src of sources) {
@@ -1741,7 +1739,6 @@ export default function Editor() {
             ? isDescendant(selNode as AppNode, attachedTo, next as AppNode[])
             : false;
 
-        // Check if this tooltip is an ancestor of the selection
         const isAncestorOfSelection = activeAncestors.has(tip.id);
 
         if (
@@ -1781,11 +1778,11 @@ export default function Editor() {
         });
       });
 
-      // --- 5. Tooltip Subgraph Logic ---
-      // Propagate 'hidden' state ONLY to nodes that belong to a Tooltip chain.
+      // --- 5. Tooltip Subgraph Logic (UPDATED) ---
 
       const incomingInteractions = new Map<string, string[]>();
       const outgoingInteractions = new Map<string, string[]>();
+      const childrenMap = new Map<string, string[]>(); // NEW: Track structural children
 
       edges.forEach((e) => {
         if (e.type === 'interaction' || e.type === 'tooltip') {
@@ -1799,7 +1796,15 @@ export default function Editor() {
         }
       });
 
-      // A. Identify the "Tooltip Subgraph" (All nodes descending from Tooltips)
+      // Build structural children map
+      next.forEach((n) => {
+        if (n.parentNode) {
+          if (!childrenMap.has(n.parentNode)) childrenMap.set(n.parentNode, []);
+          childrenMap.get(n.parentNode)!.push(n.id);
+        }
+      });
+
+      // A. Identify the "Tooltip Subgraph"
       const tooltipMap = new Map<string, boolean>();
       next.forEach((n) => {
         if (n.data?.kind === 'Tooltip') {
@@ -1818,10 +1823,12 @@ export default function Editor() {
         }
       });
 
-      // BFS: Find all downstream targets (e.g. Dashboard created by Button)
+      // BFS: Find all downstream targets (Interactions AND Structural Descendants)
       let head = 0;
       while (head < queue.length) {
         const curr = queue[head++];
+
+        // 1. Follow Interactions
         const targets = outgoingInteractions.get(curr);
         if (targets) {
           for (const t of targets) {
@@ -1831,13 +1838,25 @@ export default function Editor() {
             }
           }
         }
+
+        // 2. Follow Structural Children (NEW)
+        // This ensures nested nodes (like Graphs inside Placeholders inside Tooltips) are caught
+        const children = childrenMap.get(curr);
+        if (children) {
+          for (const childId of children) {
+            if (!tooltipSubgraph.has(childId)) {
+              tooltipSubgraph.add(childId);
+              queue.push(childId);
+            }
+          }
+        }
       }
 
       // B. Propagate Visibility within the Subgraph
       const isHiddenMap = new Map<string, boolean>();
       next.forEach((n) => isHiddenMap.set(n.id, !!n.hidden));
 
-      // Initial Sync for seeds (Direct children adopt parent Tooltip state)
+      // Initial Sync for seeds
       next.forEach((n) => {
         if (n.parentNode && tooltipMap.has(n.parentNode)) {
           isHiddenMap.set(n.id, tooltipMap.get(n.parentNode)!);
@@ -1853,7 +1872,6 @@ export default function Editor() {
         iter++;
 
         for (const n of next) {
-          // SKIP nodes that are not part of the Tooltip flow
           if (!tooltipSubgraph.has(n.id)) continue;
 
           const currentHidden = isHiddenMap.get(n.id)!;
