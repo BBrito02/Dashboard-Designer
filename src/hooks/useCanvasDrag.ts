@@ -143,26 +143,26 @@ export function useCanvasDrag(
 
     let best: { id: string; kind: NodeKind; depth: number } | null = null;
 
-    // 3. Hit test against containers with a buffer
-    // This solves "hitbox not accurate on borders"
-    const HIT_BUFFER = 10; // 10px tolerance around the container
-
+    // 3. Strict Cursor Hit Test (Removed HIT_BUFFER)
     for (const n of cachedContainers) {
-      // Calculate absolute bounds of the container
       const abs = getAbsolutePosition(n, nodes);
       const w = n.width ?? (n.style?.width as number) ?? 0;
       const h = n.height ?? (n.style?.height as number) ?? 0;
 
-      // Check if cursor (flowPt) is inside container + buffer
+      // STRICT CHECK: Cursor must be exactly inside bounding box
       if (
-        flowPt.x >= abs.x - HIT_BUFFER &&
-        flowPt.x <= abs.x + w + HIT_BUFFER &&
-        flowPt.y >= abs.y - HIT_BUFFER &&
-        flowPt.y <= abs.y + h + HIT_BUFFER
+        flowPt.x >= abs.x &&
+        flowPt.x <= abs.x + w &&
+        flowPt.y >= abs.y &&
+        flowPt.y <= abs.y + h
       ) {
         const d = depthOf(n, nodes);
-        // Pick the deepest container (e.g. nested viz inside dashboard)
-        if (!best || d > best.depth) {
+
+        // Handle Overlaps:
+        // If we have a match, we prefer:
+        // 1. Deeper nodes (nested containers)
+        // 2. If depth is equal, the node later in the list (visually on top)
+        if (!best || d >= best.depth) {
           best = { id: n.id, kind: n.data.kind!, depth: d };
         }
       }
@@ -211,12 +211,10 @@ export function useCanvasDrag(
 
     if (!payload || !rf || !wrapperRef.current) return;
 
-    // --- CRITICAL CHANGE: Calculate final drop point using Delta ---
-    // This ensures precision by using the exact drag delta from start,
-    // rather than potentially stale React state.
+    // Calculate final drop point using Delta for precision
     const viewportPt = dragStartPoint
       ? { x: dragStartPoint.x + e.delta.x, y: dragStartPoint.y + e.delta.y }
-      : getDragCenter(e) || { x: 0, y: 0 }; // Fallback
+      : getDragCenter(e) || { x: 0, y: 0 };
 
     const flowCenter = rf.screenToFlowPosition({
       x: viewportPt.x,
@@ -290,5 +288,6 @@ export function useCanvasDrag(
     handleDragMove,
     handleDragCancel,
     handleDragEnd,
+    dragTargetParentId, // Exported for use in Editor.tsx
   };
 }
