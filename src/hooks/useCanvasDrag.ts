@@ -16,10 +16,9 @@ import { allowedChildKinds } from '../domain/rules';
 import { nextBadgeFor } from '../domain/types';
 import type { DragData } from '../components/menus/SideMenu';
 import {
-  pointInsideContentAbs,
   depthOf,
   isContainerKind,
-  getAbsolutePosition, // <--- ADD IMPORT
+  getAbsolutePosition,
 } from '../domain/layoutUtils';
 
 type AppNode = RFNode<NodeData>;
@@ -117,12 +116,18 @@ export function useCanvasDrag(
     const p = getPointFromEvent(e.activatorEvent);
     setDragStartPoint(p);
     setCursorPoint(p);
-    const containers = nodes.filter((n) => isContainerKind(n.data?.kind));
+
+    // Filter out hidden nodes so we don't drop into invisible parents
+    const containers = nodes.filter(
+      (n) => !n.hidden && isContainerKind(n.data?.kind)
+    );
     setCachedContainers(containers);
   };
 
   const handleDragMove = (e: DragMoveEvent) => {
     if (!dragStartPoint) return;
+
+    // 1. Accurately track mouse cursor
     const nextCursor = {
       x: dragStartPoint.x + e.delta.x,
       y: dragStartPoint.y + e.delta.y,
@@ -130,17 +135,36 @@ export function useCanvasDrag(
     setCursorPoint(nextCursor);
     if (!rf || !wrapperRef.current) return;
 
+    // 2. Convert cursor to Flow coordinates
     const flowPt = rf.screenToFlowPosition({
       x: nextCursor.x,
       y: nextCursor.y,
     });
 
     let best: { id: string; kind: NodeKind; depth: number } | null = null;
+
+    // 3. Hit test against containers with a buffer
+    // This solves "hitbox not accurate on borders"
+    const HIT_BUFFER = 10; // 10px tolerance around the container
+
     for (const n of cachedContainers) {
-      if (pointInsideContentAbs(flowPt, n, nodes)) {
+      // Calculate absolute bounds of the container
+      const abs = getAbsolutePosition(n, nodes);
+      const w = n.width ?? (n.style?.width as number) ?? 0;
+      const h = n.height ?? (n.style?.height as number) ?? 0;
+
+      // Check if cursor (flowPt) is inside container + buffer
+      if (
+        flowPt.x >= abs.x - HIT_BUFFER &&
+        flowPt.x <= abs.x + w + HIT_BUFFER &&
+        flowPt.y >= abs.y - HIT_BUFFER &&
+        flowPt.y <= abs.y + h + HIT_BUFFER
+      ) {
         const d = depthOf(n, nodes);
-        if (!best || d > best.depth)
+        // Pick the deepest container (e.g. nested viz inside dashboard)
+        if (!best || d > best.depth) {
           best = { id: n.id, kind: n.data.kind!, depth: d };
+        }
       }
     }
 
@@ -187,9 +211,12 @@ export function useCanvasDrag(
 
     if (!payload || !rf || !wrapperRef.current) return;
 
-    // --- CHANGED: Calculate drop point early ---
-    const viewportPt = cursorPoint ?? getDragCenter(e);
-    if (!viewportPt) return;
+    // --- CRITICAL CHANGE: Calculate final drop point using Delta ---
+    // This ensures precision by using the exact drag delta from start,
+    // rather than potentially stale React state.
+    const viewportPt = dragStartPoint
+      ? { x: dragStartPoint.x + e.delta.x, y: dragStartPoint.y + e.delta.y }
+      : getDragCenter(e) || { x: 0, y: 0 }; // Fallback
 
     const flowCenter = rf.screenToFlowPosition({
       x: viewportPt.x,
@@ -197,7 +224,6 @@ export function useCanvasDrag(
     });
 
     if (allowed && parentId) {
-      // --- CHANGED: Calculate relative position ---
       const parentNode = nodes.find((n) => n.id === parentId);
       if (parentNode) {
         const abs = getAbsolutePosition(parentNode, nodes);
