@@ -2270,6 +2270,8 @@ export default function Editor() {
               edgeTypes={EDGE_TYPES}
               selectionMode={SelectionMode.Partial}
               onNodeDragStop={() => handleLayoutReflow()}
+              nodesDraggable={!reviewMode}
+              nodesConnectable={!reviewMode}
               onSelectionChange={(p) => {
                 if (!lassoMode) {
                   if (p.nodes.length === 1) {
