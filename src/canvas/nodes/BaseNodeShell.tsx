@@ -416,6 +416,7 @@ export default function BaseNodeShell({
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (reviewMode) return;
                       window.dispatchEvent(
                         new CustomEvent('designer:open-visualvars', {
                           detail: { nodeId: id },
@@ -435,7 +436,7 @@ export default function BaseNodeShell({
                       borderStyle: 'solid',
                       borderColor: '#e5e7eb',
                       boxShadow: '0 1px 3px rgba(0,0,0,.15)',
-                      cursor: 'pointer',
+                      cursor: reviewMode ? 'default' : 'pointer',
                     }}
                   >
                     <img
@@ -558,7 +559,7 @@ export default function BaseNodeShell({
             >
               <DataPills
                 items={visibleFooterItems as DataItem[]}
-                onClick={handlePillClick}
+                onClick={reviewMode ? undefined : handlePillClick}
               />
             </div>
           ) : (

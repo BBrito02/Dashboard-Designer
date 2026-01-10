@@ -2123,7 +2123,11 @@ export default function Editor() {
               zIndex: 10,
             }}
           >
-            <SideMenu isOpen={isSidebarOpen} onToggle={handleSidebarToggle} />
+            <SideMenu
+              isOpen={isSidebarOpen}
+              onToggle={handleSidebarToggle}
+              reviewMode={reviewMode}
+            />
           </div>
           <div
             style={{

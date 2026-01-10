@@ -1,6 +1,6 @@
 import { useDraggable } from '@dnd-kit/core';
 import type { IconType } from 'react-icons';
-import { useState } from 'react'; // Only for hover states now
+import { useState } from 'react';
 import {
   LuLayoutDashboard,
   LuList,
@@ -58,14 +58,17 @@ function PaletteTile({
   payload,
   label,
   Icon,
+  disabled, // <--- 1. Nova Prop
 }: {
   payload: DragData;
   label: string;
   Icon: IconType;
+  disabled?: boolean; // <--- Definição do Tipo
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `palette-${payload.kind}`,
     data: payload,
+    disabled, // <--- 2. Passar para o dnd-kit para impedir o arrasto
   });
 
   const [isHovered, setIsHovered] = useState(false);
@@ -76,20 +79,28 @@ function PaletteTile({
       {...attributes}
       {...listeners}
       type="button"
-      title={`Drag ${label}`}
+      disabled={disabled} // Desativa interações nativas do botão se necessário
+      title={disabled ? 'Locked in Review Mode' : `Drag ${label}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
         width: '100%',
         height: TILE_H,
         boxSizing: 'border-box',
-        cursor: 'grab',
+        // 3. Estilos visuais para estado desativado
+        cursor: disabled ? 'not-allowed' : 'grab',
         userSelect: 'none',
         WebkitUserSelect: 'none',
-        background: isHovered ? '#f8fafc' : '#ffffff',
-        border: isHovered ? '1px solid #94a3b8' : '1px solid #e2e8f0',
+        background: disabled ? '#f8fafc' : isHovered ? '#f8fafc' : '#ffffff',
+        border: disabled
+          ? '1px dashed #cbd5e1'
+          : isHovered
+          ? '1px solid #94a3b8'
+          : '1px solid #e2e8f0',
         borderRadius: 12,
-        boxShadow: isHovered
+        boxShadow: disabled
+          ? 'none'
+          : isHovered
           ? '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)'
           : '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
         display: 'flex',
@@ -98,14 +109,15 @@ function PaletteTile({
         justifyContent: 'center',
         gap: 8,
         padding: 12,
-        opacity: isDragging ? 0.5 : 1,
+        opacity: isDragging ? 0.5 : disabled ? 0.6 : 1, // Reduz opacidade se desativado
         transition: 'all 0.2s ease',
-        transform: isHovered && !isDragging ? 'translateY(-1px)' : 'none',
+        transform:
+          isHovered && !isDragging && !disabled ? 'translateY(-1px)' : 'none',
       }}
     >
       <div
         style={{
-          color: isHovered ? '#0f172a' : '#64748b',
+          color: disabled ? '#94a3b8' : isHovered ? '#0f172a' : '#64748b',
           transition: 'color 0.2s ease',
         }}
       >
@@ -115,7 +127,7 @@ function PaletteTile({
         style={{
           fontSize: 12,
           fontWeight: 600,
-          color: '#334155',
+          color: disabled ? '#94a3b8' : '#334155',
           lineHeight: 1.2,
           textAlign: 'center',
         }}
@@ -126,15 +138,18 @@ function PaletteTile({
   );
 }
 
-// 1. Define Props
+// 4. Atualizar Props do SideMenu
 type SideMenuProps = {
   isOpen: boolean;
   onToggle: () => void;
+  reviewMode?: boolean; // <--- Nova Prop
 };
 
-// 2. Accept Props
-export default function SideMenu({ isOpen, onToggle }: SideMenuProps) {
-  // 3. Derive internal variables from props
+export default function SideMenu({
+  isOpen,
+  onToggle,
+  reviewMode,
+}: SideMenuProps) {
   const collapsed = !isOpen;
   const width = collapsed ? 0 : SIDEBAR_W;
 
@@ -237,6 +252,7 @@ export default function SideMenu({ isOpen, onToggle }: SideMenuProps) {
                       payload={{ kind: it.kind }}
                       label={it.label}
                       Icon={it.Icon}
+                      disabled={reviewMode} // <--- 5. Passar a prop disabled
                     />
                   ))}
                 </div>
