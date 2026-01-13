@@ -72,6 +72,7 @@ export default function ReviewMenu({
   onDeleteReply: (reviewId: string, replyId: string) => void;
 }) {
   const [currentUser, setCurrentUser] = useState('');
+  const [replyAuthor, setReplyAuthor] = useState('');
 
   // Add Form State
   const [text, setText] = useState('');
@@ -149,8 +150,9 @@ export default function ReviewMenu({
 
   const submitReply = (reviewId: string) => {
     if (!replyText.trim()) return;
-    onReply(reviewId, replyText, currentUser || 'Anonymous');
+    onReply(reviewId, replyText, replyAuthor || 'Anonymous');
     setReplyText('');
+    setReplyAuthor('');
     setReplyingId(null);
   };
 
@@ -511,8 +513,8 @@ export default function ReviewMenu({
                   >
                     <LuUser size={12} color="#94a3b8" flex-shrink="0" />
                     <input
-                      value={currentUser}
-                      onChange={(e) => setCurrentUser(e.target.value)}
+                      value={replyAuthor}
+                      onChange={(e) => setReplyAuthor(e.target.value)}
                       placeholder="Your Name..."
                       style={{
                         border: 'none',
@@ -605,6 +607,7 @@ export default function ReviewMenu({
                       onClick={() => {
                         setReplyingId(isReplying ? null : r.id);
                         setReplyText('');
+                        setReplyAuthor('');
                       }}
                       style={{
                         padding: 6,
