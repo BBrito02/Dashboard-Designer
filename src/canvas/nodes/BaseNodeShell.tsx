@@ -314,7 +314,7 @@ export default function BaseNodeShell({
       }}
     >
       <NodeResizer
-        isVisible={!!selected} // Only show resize handles when actually selected (not just highlighted)
+        isVisible={!!selected && !reviewMode} // Only show resize handles when actually selected (not just highlighted)
         minWidth={minW}
         minHeight={minH}
         handleStyle={{ width: 12, height: 12, borderRadius: 4 }}
