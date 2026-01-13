@@ -31,7 +31,7 @@ const GraphNode = (props: NodeProps<NodeData>) => {
 
   // Updated Badge: Removed marginRight, added height/display for perfect centering
   const perspectiveBadge =
-    perspectiveCount > 0 ? (
+    perspectiveCount > 1 ? (
       <span
         title={`${perspectiveCount} Perspective(s)`}
         style={{
