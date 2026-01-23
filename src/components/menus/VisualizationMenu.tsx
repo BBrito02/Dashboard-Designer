@@ -26,7 +26,7 @@ export default function VisualizationMenu(p: ExtendedKindProps) {
 
   const handleToggleHidden = (
     category: 'data' | 'interactions' | 'tooltips',
-    val: boolean
+    val: boolean,
   ) => {
     const nextCats = { ...(d.collapsedCategories || {}), [category]: val };
     p.onChange({ collapsedCategories: nextCats } as any);
@@ -34,7 +34,7 @@ export default function VisualizationMenu(p: ExtendedKindProps) {
     window.dispatchEvent(
       new CustomEvent('designer:toggle-hidden', {
         detail: { nodeId: p.node.id, category, hidden: val },
-      })
+      }),
     );
   };
 
@@ -105,7 +105,7 @@ export default function VisualizationMenu(p: ExtendedKindProps) {
   const handleAddComponent = () => {
     const parentKind = (p.node.data?.kind ?? 'Visualization') as NodeKind;
     const baseKinds = allowedChildKinds(parentKind).filter(
-      (k) => k !== 'Graph'
+      (k) => k !== 'Graph',
     );
     const kinds = [...baseKinds, 'GraphType', 'VisualVariable'] as const;
 
@@ -125,7 +125,7 @@ export default function VisualizationMenu(p: ExtendedKindProps) {
                     parentId: p.node.id,
                     graphTypes: payload.graphTypes,
                   },
-                })
+                }),
               );
               closeModal();
               return;
@@ -138,7 +138,7 @@ export default function VisualizationMenu(p: ExtendedKindProps) {
             window.dispatchEvent(
               new CustomEvent('designer:add-component', {
                 detail: { parentId: p.node.id, payload },
-              })
+              }),
             );
             closeModal();
           }}
@@ -222,7 +222,7 @@ export default function VisualizationMenu(p: ExtendedKindProps) {
           window.dispatchEvent(
             new CustomEvent('designer:open-interactions', {
               detail: { nodeId: p.node.id },
-            })
+            }),
           );
         }}
         onItemClick={(i) => {
@@ -235,7 +235,7 @@ export default function VisualizationMenu(p: ExtendedKindProps) {
                   targetId: item._targetId,
                   targetDataRef: item._targetDataRef,
                 },
-              })
+              }),
             );
           }
         }}
@@ -252,7 +252,7 @@ export default function VisualizationMenu(p: ExtendedKindProps) {
           window.dispatchEvent(
             new CustomEvent('designer:open-tooltips', {
               detail: { nodeId: p.node.id },
-            })
+            }),
           );
         }}
         onItemClick={(i) => {
@@ -260,13 +260,13 @@ export default function VisualizationMenu(p: ExtendedKindProps) {
           window.dispatchEvent(
             new CustomEvent('designer:select-tooltip', {
               detail: { parentId: p.node.id, label },
-            })
+            }),
           );
         }}
         addTooltip="Associate tooltip"
         disabled={disabled}
-        hidden={d.collapsedCategories?.tooltips}
-        onToggleHidden={(v) => handleToggleHidden('tooltips', v)}
+        //hidden={d.collapsedCategories?.tooltips}
+        //onToggleHidden={(v) => handleToggleHidden('tooltips', v)}
       />
     </div>
   );

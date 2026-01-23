@@ -24,7 +24,7 @@ type Props = {
   onChange: (patch: Partial<NodeData>) => void;
   onDelete?: () => void;
   onOpen?: (
-    type: 'data' | 'interactions' | 'tooltips' | 'add-component'
+    type: 'data' | 'interactions' | 'tooltips' | 'add-component',
   ) => void;
   parentData?: (string | DataItem)[];
 
@@ -103,7 +103,7 @@ export default function ComponentsMenu(props: Props) {
     if (currId && currId !== lastNodeIdRef.current) {
       setCollapsed(false);
       window.dispatchEvent(
-        new CustomEvent('designer:menu-width', { detail: { width: PANEL_W } })
+        new CustomEvent('designer:menu-width', { detail: { width: PANEL_W } }),
       );
     }
     lastNodeIdRef.current = currId;
@@ -111,12 +111,12 @@ export default function ComponentsMenu(props: Props) {
 
   useEffect(() => {
     window.dispatchEvent(
-      new CustomEvent('designer:menu-width', { detail: { width } })
+      new CustomEvent('designer:menu-width', { detail: { width } }),
     );
   }, [width]);
 
   const handleTransitionEnd: React.TransitionEventHandler<HTMLElement> = (
-    e
+    e,
   ) => {
     if (e.target !== e.currentTarget) return;
     if (!visible) setShouldRender(false);
@@ -171,7 +171,7 @@ export default function ComponentsMenu(props: Props) {
           window.dispatchEvent(
             new CustomEvent('designer:menu-width', {
               detail: { width: next ? COLLAPSED_W : PANEL_W },
-            })
+            }),
           );
         }}
         title={collapsed ? 'Expand panel' : 'Collapse panel'}
@@ -226,7 +226,7 @@ export default function ComponentsMenu(props: Props) {
             >
               <span
                 style={{
-                  fontSize: 12,
+                  fontSize: 15,
                   fontWeight: 700,
                   color: '#0f172a',
                 }}
