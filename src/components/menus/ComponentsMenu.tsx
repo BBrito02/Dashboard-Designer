@@ -131,9 +131,11 @@ export default function ComponentsMenu(props: Props) {
   const perspectiveIds = panelNode.data.perspectives ?? [];
   const currentIndex = perspectiveIds.indexOf(panelNode.id);
   const hasPerspectives = perspectiveIds.length > 0;
+  const hasMultiple = perspectiveIds.length > 1;
 
   const showPerspectiveSection =
-    !disabled && (hasPerspectives || !!onCreatePerspective);
+    !disabled &&
+    (reviewMode ? hasMultiple : hasPerspectives || !!onCreatePerspective);
 
   return (
     <aside
@@ -237,7 +239,7 @@ export default function ComponentsMenu(props: Props) {
                   : ''}
               </span>
 
-              {onCreatePerspective && (
+              {onCreatePerspective && !reviewMode && (
                 <button
                   onClick={() => onCreatePerspective(panelNode.id)}
                   title="Create new perspective"

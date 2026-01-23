@@ -148,7 +148,7 @@ const baseFrom = (name: string) => name.replace(/\.[^.]+$/, '');
 
 function flowToScreen(
   rf: ReactFlowInstance | null,
-  pt: { x: number; y: number }
+  pt: { x: number; y: number },
 ) {
   const vp = (rf && (rf as any).getViewport?.()) || { x: 0, y: 0, zoom: 1 };
   return { x: vp.x + pt.x * vp.zoom, y: vp.y + pt.y * vp.zoom };
@@ -182,7 +182,7 @@ export default function Editor() {
     nodes as any,
     edges,
     setNodes as any,
-    setEdges
+    setEdges,
   );
 
   const LS_SIDEBAR_KEY = 'designer:sidemenu:collapsed';
@@ -283,7 +283,7 @@ export default function Editor() {
   const { applyConstraints, handleLayoutReflow, syncParentGraphTypes } =
     useLayoutConstraints(
       setNodes as React.Dispatch<React.SetStateAction<AppNode[]>>,
-      takeSnapshot
+      takeSnapshot,
     );
 
   // --- Map ID -> Title for resolution in menus ---
@@ -323,7 +323,7 @@ export default function Editor() {
         all.forEach((n) => {
           if (toDelete.has(n.id) && !n.hidden && n.data?.perspectives?.length) {
             const survivors = n.data.perspectives.filter(
-              (pid) => !toDelete.has(pid)
+              (pid) => !toDelete.has(pid),
             );
             if (survivors.length > 0) {
               const key = survivors.sort().join('|');
@@ -354,7 +354,7 @@ export default function Editor() {
         kept = kept.map((n) => {
           if (n.data?.perspectives) {
             const newPerspectives = n.data.perspectives.filter(
-              (pid) => !toDelete.has(pid)
+              (pid) => !toDelete.has(pid),
             );
             if (newPerspectives.length !== n.data.perspectives.length) {
               return {
@@ -383,7 +383,7 @@ export default function Editor() {
 
             const survivorSubtree = collectDescendants(
               kept,
-              new Set([candidate.id])
+              new Set([candidate.id]),
             );
 
             kept = kept.map((n) => {
@@ -421,7 +421,7 @@ export default function Editor() {
           if (!d?.interactions) return n;
           const cleaned = d.interactions.filter((ix: any) => {
             const stillValid = ix.targets.every(
-              (tid: string) => !toDelete.has(tid)
+              (tid: string) => !toDelete.has(tid),
             );
             if (!stillValid) return false;
             return true;
@@ -431,13 +431,13 @@ export default function Editor() {
         });
 
         setEdges((eds) =>
-          eds.filter((e) => !toDelete.has(e.source) && !toDelete.has(e.target))
+          eds.filter((e) => !toDelete.has(e.source) && !toDelete.has(e.target)),
         );
 
         return syncParentGraphTypes(kept) as AppNode[];
       });
     },
-    [setNodes, setEdges, takeSnapshot, syncParentGraphTypes]
+    [setNodes, setEdges, takeSnapshot, syncParentGraphTypes],
   );
 
   const executeCreatePerspective = useCallback(
@@ -515,12 +515,13 @@ export default function Editor() {
 
       requestAnimationFrame(() => setSelectedId(newId));
     },
-    [setNodes, setEdges, takeSnapshot, setSelectedId]
+    [setNodes, setEdges, takeSnapshot, setSelectedId],
   );
 
   // 3. REPLACE THE EXISTING handleCreatePerspective WITH THIS
   const handleCreatePerspective = useCallback(
     (sourceId: string) => {
+      if (reviewMode) return;
       const sourceNode = nodes.find((n) => n.id === sourceId);
       if (!sourceNode) return;
 
@@ -555,7 +556,7 @@ export default function Editor() {
         executeCreatePerspective(sourceId);
       }
     },
-    [nodes, openModal, closeModal, executeCreatePerspective]
+    [nodes, openModal, closeModal, executeCreatePerspective, reviewMode],
   );
 
   const handleNavigate = useCallback(
@@ -567,7 +568,7 @@ export default function Editor() {
 
         const groupIds = targetNode.data.perspectives || [targetNodeId];
         const currentActive = all.find(
-          (n) => groupIds.includes(n.id) && !n.hidden
+          (n) => groupIds.includes(n.id) && !n.hidden,
         );
         const positionToUse = currentActive
           ? { ...currentActive.position }
@@ -598,7 +599,7 @@ export default function Editor() {
 
       setSelectedId(targetNodeId);
     },
-    [setNodes, setSelectedId]
+    [setNodes, setSelectedId],
   );
 
   const updateNodeById = useCallback(
@@ -617,7 +618,7 @@ export default function Editor() {
 
         if (removedItems.length > 0) {
           const removedHandlePrefixes = new Set(
-            removedItems.map((i) => `data:${i.id}`)
+            removedItems.map((i) => `data:${i.id}`),
           );
 
           const edgeIdsToDelete: string[] = [];
@@ -670,7 +671,7 @@ export default function Editor() {
           if (nodeIdsToDelete.length > 0) {
             const nodesToDeleteSet = new Set(nodeIdsToDelete);
             const tooltipNodes = nodes.filter((n) =>
-              nodesToDeleteSet.has(n.id)
+              nodesToDeleteSet.has(n.id),
             );
             tooltipNodes.forEach((t) => {
               const d = t.data as any;
@@ -705,7 +706,7 @@ export default function Editor() {
                   Array.isArray(nextData?.interactions)
                 ) {
                   const filtered = nextData.interactions.filter(
-                    (ix: any) => !interactionsToRemove.has(ix?.id)
+                    (ix: any) => !interactionsToRemove.has(ix?.id),
                   );
                   if (filtered.length !== nextData.interactions.length) {
                     if (!changed) nextData = { ...nextData };
@@ -719,7 +720,7 @@ export default function Editor() {
                   Array.isArray(nextData?.tooltips)
                 ) {
                   const filtered = nextData.tooltips.filter(
-                    (lbl: string) => !tooltipLabelsToRemove.has(lbl)
+                    (lbl: string) => !tooltipLabelsToRemove.has(lbl),
                   );
                   if (filtered.length !== nextData.tooltips.length) {
                     if (!changed) nextData = { ...nextData };
@@ -730,7 +731,7 @@ export default function Editor() {
                 return changed
                   ? ({ ...n, data: nextData } as RFNode<NodeData>)
                   : n;
-              }) as AppNode[]
+              }) as AppNode[],
           );
           return;
         }
@@ -744,7 +745,7 @@ export default function Editor() {
           const oldOpts = (node.data as any).options || [];
           const newOpts = patchAny.options as string[];
           removedParamOptions = oldOpts.filter(
-            (o: string) => !newOpts.includes(o)
+            (o: string) => !newOpts.includes(o),
           );
         }
       }
@@ -793,7 +794,7 @@ export default function Editor() {
           if (parentUpdate && nextNode.id === parentUpdate.id) {
             const currentTooltips = (nextNode.data as any).tooltips || [];
             const nextTooltips = currentTooltips.map((t: string) =>
-              t === parentUpdate!.oldLabel ? parentUpdate!.newLabel : t
+              t === parentUpdate!.oldLabel ? parentUpdate!.newLabel : t,
             );
             nextNode = {
               ...nextNode,
@@ -810,7 +811,7 @@ export default function Editor() {
               (e) =>
                 e.source === id &&
                 e.target === nextNode.id &&
-                e.targetHandle?.startsWith('data:')
+                e.targetHandle?.startsWith('data:'),
             );
 
             if (incoming.length > 0) {
@@ -861,7 +862,7 @@ export default function Editor() {
         }) as AppNode[];
       });
     },
-    [nodes, edges, rf, setNodes, takeSnapshot]
+    [nodes, edges, rf, setNodes, takeSnapshot],
   );
 
   const createChildInParent = useCallback(
@@ -888,7 +889,7 @@ export default function Editor() {
         } else {
           const cols = Math.max(
             1,
-            Math.floor((innerWidth + GRID_GAP) / (size.width + GRID_GAP))
+            Math.floor((innerWidth + GRID_GAP) / (size.width + GRID_GAP)),
           );
           const children = all.filter((n) => n.parentNode === parentId);
           const idx = children.length;
@@ -916,11 +917,11 @@ export default function Editor() {
             extent: 'parent',
             data,
             style: size,
-          } as AppNode)
+          } as AppNode),
         );
       });
     },
-    [setNodes, takeSnapshot, applyConstraints]
+    [setNodes, takeSnapshot, applyConstraints],
   );
 
   const [modal, setModal] = useState<{
@@ -950,7 +951,7 @@ export default function Editor() {
         nodeId: parentId,
         presetKind: kind,
         position,
-      })
+      }),
   );
 
   useEffect(() => {
@@ -1006,7 +1007,7 @@ export default function Editor() {
           ? list.map((v) =>
               typeof v === 'string'
                 ? { id: nanoid(), name: v, dtype: 'Other' }
-                : { ...v, id: v.id || nanoid() }
+                : { ...v, id: v.id || nanoid() },
             )
           : [];
 
@@ -1108,13 +1109,13 @@ export default function Editor() {
                   if (detail.targetType === 'data' && detail.targetDataRef) {
                     const attrId = detail.targetDataRef;
                     const targetNode = nodes.find(
-                      (n) => n.id === detail.targetId
+                      (n) => n.id === detail.targetId,
                     );
 
                     if (targetNode) {
                       const rawDataList = (targetNode.data as any)?.data || [];
                       const itemIndex = rawDataList.findIndex(
-                        (it: any) => it.id === attrId
+                        (it: any) => it.id === attrId,
                       );
 
                       if (itemIndex > -1) {
@@ -1174,7 +1175,7 @@ export default function Editor() {
 
               setNodes((nds) => {
                 let all = nds.map((n) =>
-                  nodesToUpdate.has(n.id) ? nodesToUpdate.get(n.id) : n
+                  nodesToUpdate.has(n.id) ? nodesToUpdate.get(n.id) : n,
                 );
                 if (newDashboardNode) all.push(newDashboardNode);
                 const idx = all.findIndex((n) => n.id === sourceId);
@@ -1206,8 +1207,8 @@ export default function Editor() {
                 const sourceHandleId = isParameter
                   ? null
                   : sourceType === 'component'
-                  ? `${sourceId}:act:${trigger}`
-                  : `data:${sourceDataRef}:${trigger}`;
+                    ? `${sourceId}:act:${trigger}`
+                    : `data:${sourceDataRef}:${trigger}`;
 
                 const add = finalTargetDetailsList.map((detail) => {
                   const tid = detail.targetId;
@@ -1251,12 +1252,12 @@ export default function Editor() {
     }
     window.addEventListener(
       'designer:open-interactions',
-      onOpenInteractions as EventListener
+      onOpenInteractions as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:open-interactions',
-        onOpenInteractions as EventListener
+        onOpenInteractions as EventListener,
       );
   }, [nodes, openModal, closeModal, setNodes, setEdges]);
 
@@ -1310,7 +1311,7 @@ export default function Editor() {
                           ],
                         },
                       }
-                    : x
+                    : x,
                 );
               });
 
@@ -1348,12 +1349,12 @@ export default function Editor() {
     }
     window.addEventListener(
       'designer:open-tooltips',
-      onOpenTooltips as EventListener
+      onOpenTooltips as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:open-tooltips',
-        onOpenTooltips as EventListener
+        onOpenTooltips as EventListener,
       );
   }, [nodes, selectedId, openModal, closeModal, setNodes, setEdges]);
 
@@ -1416,12 +1417,12 @@ export default function Editor() {
 
     window.addEventListener(
       'designer:parameter-value-change',
-      onParamChange as EventListener
+      onParamChange as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:parameter-value-change',
-        onParamChange as EventListener
+        onParamChange as EventListener,
       );
   }, [nodes, edges, setNodes, setEdges, takeSnapshot]);
 
@@ -1459,18 +1460,18 @@ export default function Editor() {
           return edge.hidden === shouldHide
             ? edge
             : { ...edge, hidden: shouldHide };
-        })
+        }),
       );
     };
 
     window.addEventListener(
       'designer:toggle-hidden',
-      onToggleHidden as EventListener
+      onToggleHidden as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:toggle-hidden',
-        onToggleHidden as EventListener
+        onToggleHidden as EventListener,
       );
   }, [setEdges]);
 
@@ -1572,7 +1573,7 @@ export default function Editor() {
         (rf as any).setViewport?.(save.viewport, { duration: 0 });
       setSelectedId(null);
     },
-    [rf, setNodes, setEdges]
+    [rf, setNodes, setEdges],
   );
 
   const openSaveModal = useCallback(() => {
@@ -1595,7 +1596,7 @@ export default function Editor() {
 
   const selectedEdge = useMemo(
     () => edges.find((e) => e.id === selectedEdgeId) ?? null,
-    [edges, selectedEdgeId]
+    [edges, selectedEdgeId],
   );
 
   const onConnect = useCallback(
@@ -1618,11 +1619,11 @@ export default function Editor() {
               activation: trigger,
             },
           },
-          eds
-        )
+          eds,
+        ),
       );
     },
-    [nodes, setEdges, takeSnapshot]
+    [nodes, setEdges, takeSnapshot],
   );
 
   const deleteSelectedNode = useCallback(() => {
@@ -1650,7 +1651,7 @@ export default function Editor() {
     return () =>
       window.removeEventListener(
         'designer:menu-width',
-        onWidth as EventListener
+        onWidth as EventListener,
       );
   }, []);
 
@@ -1964,7 +1965,7 @@ export default function Editor() {
             const sources = incomingInteractions.get(n.id);
             if (sources && sources.length > 0) {
               const allSourcesHidden = sources.every((srcId) =>
-                isHiddenMap.get(srcId)
+                isHiddenMap.get(srcId),
               );
               nextHidden = allSourcesHidden;
             }
@@ -2000,14 +2001,14 @@ export default function Editor() {
     if (!rf) return;
     const result: typeof markers = [];
     const tooltipEdges = edges.filter(
-      (e: any) => (e.data && e.data.kind) === 'tooltip-link'
+      (e: any) => (e.data && e.data.kind) === 'tooltip-link',
     );
     for (const e of tooltipEdges as any[]) {
       const viz = nodes.find((n) => n.id === e.source);
       if (!viz) continue;
       const { x: absX, y: absY } = getAbsolutePosition(
         viz as AppNode,
-        nodes as AppNode[]
+        nodes as AppNode[],
       );
       const { w, h } = getNodeSize(viz as AppNode);
       const anchorFlow = { x: absX + w, y: absY + h / 2 };
@@ -2056,26 +2057,26 @@ export default function Editor() {
             },
           };
         }),
-    [edges, reviewsByTarget, reviewMode, showInteractions]
+    [edges, reviewsByTarget, reviewMode, showInteractions],
   );
 
   const selectedNode = useMemo(
     () => nodes.find((n) => n.id === selectedId),
-    [nodes, selectedId]
+    [nodes, selectedId],
   );
   const selectedEdgeSource = useMemo(
     () =>
       selectedEdge
         ? nodes.find((n) => n.id === selectedEdge.source)
         : undefined,
-    [selectedEdge, nodes]
+    [selectedEdge, nodes],
   );
   const selectedEdgeTarget = useMemo(
     () =>
       selectedEdge
         ? nodes.find((n) => n.id === selectedEdge.target)
         : undefined,
-    [selectedEdge, nodes]
+    [selectedEdge, nodes],
   );
 
   const parentDataForSelected = useMemo(() => {
@@ -2389,7 +2390,7 @@ export default function Editor() {
                   setReviewsByTarget((m) => ({
                     ...m,
                     [selectedNode.id]: (m[selectedNode.id] || []).map((r) =>
-                      r.id === rid ? { ...r, ...patch } : r
+                      r.id === rid ? { ...r, ...patch } : r,
                     ),
                   }));
                 }}
@@ -2397,7 +2398,7 @@ export default function Editor() {
                   setReviewsByTarget((m) => ({
                     ...m,
                     [selectedNode.id]: (m[selectedNode.id] || []).filter(
-                      (r) => r.id !== rid
+                      (r) => r.id !== rid,
                     ),
                   }));
                 }}
@@ -2413,7 +2414,7 @@ export default function Editor() {
                     [selectedNode.id]: (m[selectedNode.id] || []).map((r) =>
                       r.id === rid
                         ? { ...r, replies: [...(r.replies || []), reply] }
-                        : r
+                        : r,
                     ),
                   }));
                 }}
@@ -2425,10 +2426,10 @@ export default function Editor() {
                         ? {
                             ...r,
                             replies: (r.replies || []).filter(
-                              (re) => re.id !== replyId
+                              (re) => re.id !== replyId,
                             ),
                           }
-                        : r
+                        : r,
                     ),
                   }));
                 }}
@@ -2482,7 +2483,7 @@ export default function Editor() {
                     setReviewsByTarget((m) => ({
                       ...m,
                       [selectedEdge.id]: (m[selectedEdge.id] || []).map((r) =>
-                        r.id === rid ? { ...r, ...patch } : r
+                        r.id === rid ? { ...r, ...patch } : r,
                       ),
                     }))
                   }
@@ -2490,7 +2491,7 @@ export default function Editor() {
                     setReviewsByTarget((m) => ({
                       ...m,
                       [selectedEdge.id]: (m[selectedEdge.id] || []).filter(
-                        (r) => r.id !== rid
+                        (r) => r.id !== rid,
                       ),
                     }))
                   }
@@ -2506,7 +2507,7 @@ export default function Editor() {
                       [selectedEdge.id]: (m[selectedEdge.id] || []).map((r) =>
                         r.id === rid
                           ? { ...r, replies: [...(r.replies || []), reply] }
-                          : r
+                          : r,
                       ),
                     }));
                   }}
@@ -2518,10 +2519,10 @@ export default function Editor() {
                           ? {
                               ...r,
                               replies: (r.replies || []).filter(
-                                (re) => re.id !== replyId
+                                (re) => re.id !== replyId,
                               ),
                             }
-                          : r
+                          : r,
                       ),
                     }))
                   }
@@ -2564,7 +2565,7 @@ export default function Editor() {
                     const sourceId = edgeToRemove.source;
 
                     setEdges((eds) =>
-                      eds.filter((e) => e.id !== edgeToRemove.id)
+                      eds.filter((e) => e.id !== edgeToRemove.id),
                     );
 
                     setNodes((nds) => {
@@ -2600,12 +2601,12 @@ export default function Editor() {
 
                                     // Remove if BOTH match
                                     return !(sameId && sameRef);
-                                  }
+                                  },
                                 );
 
                                 // Rebuild the simple ID list from the remaining details
                                 newTargets = newTargetDetails.map(
-                                  (t: any) => t.targetId
+                                  (t: any) => t.targetId,
                                 );
 
                                 if (
@@ -2620,7 +2621,7 @@ export default function Editor() {
                                   ? ix.targets
                                   : [];
                                 newTargets = currentTargets.filter(
-                                  (tid: string) => tid !== targetId
+                                  (tid: string) => tid !== targetId,
                                 );
                                 if (
                                   newTargets.length !== currentTargets.length
@@ -2656,7 +2657,7 @@ export default function Editor() {
                               currentTargets.includes(targetId)
                             ) {
                               const newTargets = currentTargets.filter(
-                                (tid: string) => tid !== targetId
+                                (tid: string) => tid !== targetId,
                               );
                               if (newTargets.length === 0) {
                                 changed = true;
