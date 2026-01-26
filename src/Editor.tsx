@@ -290,7 +290,14 @@ export default function Editor() {
   const nodeNames = useMemo(() => {
     const map: Record<string, string> = {};
     nodes.forEach((n) => {
-      map[n.id] = n.data.title || n.id;
+      const data = n.data as any;
+      const title = data.title || n.id;
+
+      // Update: Check for badge and prepend it if it exists
+      const badge = data.badge;
+      const label = badge ? `(${badge}) ${title}` : title;
+
+      map[n.id] = label;
     });
     return map;
   }, [nodes]);
