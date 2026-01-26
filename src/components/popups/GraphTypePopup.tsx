@@ -18,7 +18,7 @@ export default function GraphTypePopup({
 }: Props) {
   // Selected types
   const [selected, setSelected] = useState<Set<GraphType>>(
-    new Set(initialGraphTypes)
+    new Set(initialGraphTypes),
   );
 
   // Track active hover

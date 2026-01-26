@@ -60,11 +60,11 @@ export default function GraphFieldsPopup({
 
   const colOptions = useMemo(
     () => available.filter((n) => !columns.includes(n)),
-    [available, columns]
+    [available, columns],
   );
   const rowOptions = useMemo(
     () => available.filter((n) => !rows.includes(n)),
-    [available, rows]
+    [available, rows],
   );
 
   const addCol = () => {

@@ -59,6 +59,13 @@ const roundIconBtn: React.CSSProperties = {
   background: '#38bdf8',
 };
 
+// Helper: Safely convert string | string[] | null to string[]
+function asArray(val: string | string[] | null | undefined): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  return [val];
+}
+
 export default function GraphMenu(p: KindProps) {
   const d: any = p.node.data;
   const disabled = p.disabled;
@@ -160,6 +167,7 @@ export default function GraphMenu(p: KindProps) {
     if (typeof it !== 'string' && it?.name) dataIndex.set(it.name, it);
   }
 
+  // Maps array of strings -> array of ListItem objects for display
   const asListItems = (names: string[]): ListItem[] =>
     names.map((n) => dataIndex.get(n) ?? n);
 
@@ -185,11 +193,12 @@ export default function GraphMenu(p: KindProps) {
     });
   };
 
+  // Safe access to marks, handling both legacy strings and new arrays
   const marks = (d.marks ?? {}) as {
-    color?: string | null;
-    size?: string | null;
-    shape?: string | null;
-    text?: string | null;
+    color?: string | string[] | null;
+    size?: string | string[] | null;
+    shape?: string | string[] | null;
+    text?: string | string[] | null;
   };
 
   const openMarksPopup = () => {
@@ -204,10 +213,11 @@ export default function GraphMenu(p: KindProps) {
           onSave={(next) => {
             p.onChange({ marks: next } as any);
             const need: VisualVariable[] = [];
-            if (next.color) need.push('Color');
-            if (next.size) need.push('Size');
-            if (next.shape) need.push('Shape');
-            if (next.text) need.push('Text');
+            // Check if arrays have length to determine if visual var is needed
+            if (next.color && next.color.length > 0) need.push('Color');
+            if (next.size && next.size.length > 0) need.push('Size');
+            if (next.shape && next.shape.length > 0) need.push('Shape');
+            if (next.text && next.text.length > 0) need.push('Text');
 
             if (need.length) {
               const parentId = (p.node as any)?.parentNode;
@@ -215,7 +225,7 @@ export default function GraphMenu(p: KindProps) {
                 window.dispatchEvent(
                   new CustomEvent('designer:ensure-visual-vars', {
                     detail: { parentId, vars: need },
-                  })
+                  }),
                 );
               }
             }
@@ -226,20 +236,21 @@ export default function GraphMenu(p: KindProps) {
     });
   };
 
+  // --- PREPARE LISTS FOR DISPLAY (Updated to handle arrays) ---
   const columnsItems: ListItem[] = asListItems(columns);
   const rowsItems: ListItem[] = asListItems(rows);
-  const colorItems: ListItem[] = marks.color
-    ? [dataIndex.get(marks.color) ?? marks.color]
-    : [];
-  const sizeItems: ListItem[] = marks.size
-    ? [dataIndex.get(marks.size) ?? marks.size]
-    : [];
-  const shapeItems: ListItem[] = marks.shape
-    ? [dataIndex.get(marks.shape) ?? marks.shape]
-    : [];
-  const textItems: ListItem[] = marks.text
-    ? [dataIndex.get(marks.text) ?? marks.text]
-    : [];
+
+  const colorItems: ListItem[] = asListItems(asArray(marks.color));
+  const sizeItems: ListItem[] = asListItems(asArray(marks.size));
+  const shapeItems: ListItem[] = asListItems(asArray(marks.shape));
+  const textItems: ListItem[] = asListItems(asArray(marks.text));
+
+  // --- REMOVE HANDLERS (Updated to remove by index) ---
+  const removeMarkItem = (key: keyof typeof marks, idx: number) => {
+    const current = asArray(marks[key]);
+    const next = current.filter((_, i) => i !== idx);
+    p.onChange({ marks: { ...marks, [key]: next } } as any);
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -308,129 +319,131 @@ export default function GraphMenu(p: KindProps) {
       />
 
       {/* --- REFERENCE IMAGE SECTION --- */}
-      <div style={{ marginTop: 4 }}>
-        <SectionTitle>Reference Image</SectionTitle>
+      {(viewableSrc || !disabled) && (
+        <div style={{ marginTop: 4 }}>
+          <SectionTitle>Reference Image</SectionTitle>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/png, image/jpeg, image/webp"
-          hidden
-          onChange={handleImageUpload}
-        />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png, image/jpeg, image/webp"
+            hidden
+            onChange={handleImageUpload}
+          />
 
-        {viewableSrc ? (
-          <div
-            onClick={handleZoomImage}
-            title="Click to zoom"
-            style={{
-              position: 'relative',
-              border: '1px solid #e5e7eb',
-              borderRadius: 8,
-              overflow: 'hidden',
-              background: '#f8fafc',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              minHeight: 120,
-              cursor: 'zoom-in',
-              transition: 'border-color 0.2s',
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.borderColor = '#94a3b8')
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.borderColor = '#e5e7eb')
-            }
-          >
-            <img
-              src={viewableSrc}
-              alt="Graph preview"
+          {viewableSrc ? (
+            <div
+              onClick={handleZoomImage}
+              title="Click to zoom"
               style={{
-                maxWidth: '100%',
-                maxHeight: 180,
-                objectFit: 'contain',
-                display: 'block',
+                position: 'relative',
+                border: '1px solid #e5e7eb',
+                borderRadius: 8,
+                overflow: 'hidden',
+                background: '#f8fafc',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: 120,
+                cursor: 'zoom-in',
+                transition: 'border-color 0.2s',
               }}
-            />
-            {!disabled && (
-              <button
-                onClick={handleRemoveImage}
-                title="Remove image"
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.borderColor = '#94a3b8')
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.borderColor = '#e5e7eb')
+              }
+            >
+              <img
+                src={viewableSrc}
+                alt="Graph preview"
                 style={{
-                  position: 'absolute',
-                  top: 6,
-                  right: 6,
-                  background: 'rgba(255, 255, 255, 0.9)',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: 6,
-                  width: 28,
-                  height: 28,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: '#ef4444',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                  maxWidth: '100%',
+                  maxHeight: 180,
+                  objectFit: 'contain',
+                  display: 'block',
                 }}
-              >
-                <LuTrash2 size={16} />
-              </button>
-            )}
-          </div>
-        ) : (
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled || isProcessing}
-            style={{
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: 16,
-              border: '1px dashed #cbd5e1',
-              borderRadius: 8,
-              background: '#f8fafc',
-              cursor: disabled || isProcessing ? 'default' : 'pointer',
-              color: '#64748b',
-              transition: 'background 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              if (!disabled && !isProcessing) {
-                e.currentTarget.style.background = '#f1f5f9';
-                e.currentTarget.style.borderColor = '#94a3b8';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!disabled && !isProcessing) {
-                e.currentTarget.style.background = '#f8fafc';
-                e.currentTarget.style.borderColor = '#cbd5e1';
-              }
-            }}
-          >
-            {isProcessing ? (
-              <>
-                <LuLoader
-                  size={24}
-                  style={{ animation: 'spin 1s linear infinite' }}
-                />
-                <div style={{ fontSize: 12, fontWeight: 500 }}>
-                  Processing...
-                </div>
-              </>
-            ) : (
-              <>
-                <LuImagePlus size={24} style={{ opacity: 0.7 }} />
-                <div style={{ fontSize: 12, fontWeight: 500 }}>
-                  Upload Screenshot
-                </div>
-              </>
-            )}
-          </button>
-        )}
-      </div>
+              />
+              {!disabled && (
+                <button
+                  onClick={handleRemoveImage}
+                  title="Remove image"
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 6,
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 6,
+                    width: 28,
+                    height: 28,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: '#ef4444',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  <LuTrash2 size={16} />
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={disabled || isProcessing}
+              style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: 16,
+                border: '1px dashed #cbd5e1',
+                borderRadius: 8,
+                background: '#f8fafc',
+                cursor: disabled || isProcessing ? 'default' : 'pointer',
+                color: '#64748b',
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                if (!disabled && !isProcessing) {
+                  e.currentTarget.style.background = '#f1f5f9';
+                  e.currentTarget.style.borderColor = '#94a3b8';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!disabled && !isProcessing) {
+                  e.currentTarget.style.background = '#f8fafc';
+                  e.currentTarget.style.borderColor = '#cbd5e1';
+                }
+              }}
+            >
+              {isProcessing ? (
+                <>
+                  <LuLoader
+                    size={24}
+                    style={{ animation: 'spin 1s linear infinite' }}
+                  />
+                  <div style={{ fontSize: 12, fontWeight: 500 }}>
+                    Processing...
+                  </div>
+                </>
+              ) : (
+                <>
+                  <LuImagePlus size={24} style={{ opacity: 0.7 }} />
+                  <div style={{ fontSize: 12, fontWeight: 500 }}>
+                    Upload Screenshot
+                  </div>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      )}
       {/* ------------------------------------------ */}
 
       <div style={headerRow}>
@@ -506,28 +519,28 @@ export default function GraphMenu(p: KindProps) {
         title="Color"
         items={colorItems}
         disabled={disabled}
-        onRemove={() => p.onChange({ marks: { ...marks, color: null } } as any)}
+        onRemove={(idx) => removeMarkItem('color', idx)}
         icon={vvIcon('Color')}
       />
       <ListAttributesSection
         title="Size"
         items={sizeItems}
         disabled={disabled}
-        onRemove={() => p.onChange({ marks: { ...marks, size: null } } as any)}
+        onRemove={(idx) => removeMarkItem('size', idx)}
         icon={vvIcon('Size')}
       />
       <ListAttributesSection
         title="Shape"
         items={shapeItems}
         disabled={disabled}
-        onRemove={() => p.onChange({ marks: { ...marks, shape: null } } as any)}
+        onRemove={(idx) => removeMarkItem('shape', idx)}
         icon={vvIcon('Shape')}
       />
       <ListAttributesSection
         title="Text"
         items={textItems}
         disabled={disabled}
-        onRemove={() => p.onChange({ marks: { ...marks, text: null } } as any)}
+        onRemove={(idx) => removeMarkItem('text', idx)}
         icon={vvIcon('Text')}
       />
     </div>
