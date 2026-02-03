@@ -447,6 +447,33 @@ export default function Editor() {
     [setNodes, setEdges, takeSnapshot, syncParentGraphTypes],
   );
 
+  // Replace your existing handleReviewNavigation with this:
+  // Add this inside Editor function
+  const handleReviewNavigation = useCallback(
+    (targetId: string) => {
+      const node = nodes.find((n) => n.id === targetId);
+      if (node) {
+        // Use event dispatch to prevent 'pane click' conflicts
+        window.dispatchEvent(
+          new CustomEvent('designer:select-node', {
+            detail: { nodeId: targetId },
+          }),
+        );
+        return;
+      }
+      const edge = edges.find((e) => e.id === targetId);
+      if (edge) {
+        setEdges((eds) =>
+          eds.map((e) => ({ ...e, selected: e.id === targetId })),
+        );
+        setNodes((nds) => nds.map((n) => ({ ...n, selected: false })));
+        setSelectedEdgeId(targetId);
+        setSelectedId(null);
+      }
+    },
+    [nodes, edges, setEdges, setNodes],
+  );
+
   const executeCreatePerspective = useCallback(
     (sourceId: string, graphTypeOverride?: GraphType) => {
       takeSnapshot();
@@ -2135,6 +2162,11 @@ export default function Editor() {
               isOpen={isSidebarOpen}
               onToggle={handleSidebarToggle}
               reviewMode={reviewMode}
+              reviewsByTarget={reviewsByTarget}
+              nodeNames={nodeNames}
+              onSelectTarget={handleReviewNavigation}
+              nodes={nodes}
+              edges={edges}
             />
           </div>
           <div
