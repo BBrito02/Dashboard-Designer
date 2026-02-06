@@ -2167,6 +2167,7 @@ export default function Editor() {
               onSelectTarget={handleReviewNavigation}
               nodes={nodes}
               edges={edges}
+              isDragging={isDraggingFromPalette}
             />
           </div>
           <div

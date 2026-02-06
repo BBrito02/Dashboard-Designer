@@ -23,7 +23,6 @@ import {
 
 type AppNode = RFNode<NodeData>;
 
-// Local helper to define node types without depending on Editor.tsx
 function nodeTypeFor(kind: NodeKind): string {
   switch (kind) {
     case 'Dashboard':
@@ -55,15 +54,14 @@ export function useCanvasDrag(
   takeSnapshot: () => void,
   rf: ReactFlowInstance | null,
   wrapperRef: RefObject<HTMLDivElement | null>,
-  // Updated signature to accept position
   onDropInParent: (
     parentId: string,
     kind: NodeKind,
-    position?: { x: number; y: number }
-  ) => void
+    position?: { x: number; y: number },
+  ) => void,
 ) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
 
   const [isDraggingFromPalette, setIsDraggingFromPalette] = useState(false);
@@ -77,7 +75,7 @@ export function useCanvasDrag(
     y: number;
   } | null>(null);
   const [dragTargetParentId, setDragTargetParentId] = useState<string | null>(
-    null
+    null,
   );
   const [dragAllowed, setDragAllowed] = useState(false);
   const [cachedContainers, setCachedContainers] = useState<AppNode[]>([]);
@@ -117,9 +115,8 @@ export function useCanvasDrag(
     setDragStartPoint(p);
     setCursorPoint(p);
 
-    // Filter out hidden nodes so we don't drop into invisible parents
     const containers = nodes.filter(
-      (n) => !n.hidden && isContainerKind(n.data?.kind)
+      (n) => !n.hidden && isContainerKind(n.data?.kind),
     );
     setCachedContainers(containers);
   };
@@ -127,7 +124,6 @@ export function useCanvasDrag(
   const handleDragMove = (e: DragMoveEvent) => {
     if (!dragStartPoint) return;
 
-    // 1. Accurately track mouse cursor
     const nextCursor = {
       x: dragStartPoint.x + e.delta.x,
       y: dragStartPoint.y + e.delta.y,
@@ -135,7 +131,6 @@ export function useCanvasDrag(
     setCursorPoint(nextCursor);
     if (!rf || !wrapperRef.current) return;
 
-    // 2. Convert cursor to Flow coordinates
     const flowPt = rf.screenToFlowPosition({
       x: nextCursor.x,
       y: nextCursor.y,
@@ -143,13 +138,11 @@ export function useCanvasDrag(
 
     let best: { id: string; kind: NodeKind; depth: number } | null = null;
 
-    // 3. Strict Cursor Hit Test (Removed HIT_BUFFER)
     for (const n of cachedContainers) {
       const abs = getAbsolutePosition(n, nodes);
       const w = n.width ?? (n.style?.width as number) ?? 0;
       const h = n.height ?? (n.style?.height as number) ?? 0;
 
-      // STRICT CHECK: Cursor must be exactly inside bounding box
       if (
         flowPt.x >= abs.x &&
         flowPt.x <= abs.x + w &&
@@ -157,11 +150,6 @@ export function useCanvasDrag(
         flowPt.y <= abs.y + h
       ) {
         const d = depthOf(n, nodes);
-
-        // Handle Overlaps:
-        // If we have a match, we prefer:
-        // 1. Deeper nodes (nested containers)
-        // 2. If depth is equal, the node later in the list (visually on top)
         if (!best || d >= best.depth) {
           best = { id: n.id, kind: n.data.kind!, depth: d };
         }
@@ -199,6 +187,19 @@ export function useCanvasDrag(
   };
 
   const handleDragEnd = (e: DragEndEvent) => {
+    // --- NEW: Check for Trash Zone ---
+    if (e.over && e.over.id === 'TRASH_ZONE') {
+      setIsDraggingFromPalette(false);
+      setDragPreview(null);
+      setDragStartPoint(null);
+      setCursorPoint(null);
+      setDragTargetParentId(null);
+      setDragAllowed(false);
+      document.body.style.cursor = '';
+      return; // Stop execution (Cancel Drag)
+    }
+    // ---------------------------------
+
     setIsDraggingFromPalette(false);
     const payload = e.active.data.current as DragData | undefined;
     setDragPreview(null);
@@ -211,7 +212,6 @@ export function useCanvasDrag(
 
     if (!payload || !rf || !wrapperRef.current) return;
 
-    // Calculate final drop point using Delta for precision
     const viewportPt = dragStartPoint
       ? { x: dragStartPoint.x + e.delta.x, y: dragStartPoint.y + e.delta.y }
       : getDragCenter(e) || { x: 0, y: 0 };
@@ -276,7 +276,7 @@ export function useCanvasDrag(
         position,
         data: { ...data, badge: nextBadgeFor(data.kind, nds) },
         style: size,
-      } as AppNode)
+      } as AppNode),
     );
   };
 
@@ -288,6 +288,6 @@ export function useCanvasDrag(
     handleDragMove,
     handleDragCancel,
     handleDragEnd,
-    dragTargetParentId, // Exported for use in Editor.tsx
+    dragTargetParentId,
   };
 }

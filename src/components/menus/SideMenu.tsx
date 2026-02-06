@@ -1,4 +1,4 @@
-import { useDraggable } from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import type { IconType } from 'react-icons';
 import { useState, useMemo } from 'react';
 import {
@@ -13,6 +13,7 @@ import {
   LuPanelRightClose,
   LuMessageSquare,
   LuCheck,
+  LuTrash2,
 } from 'react-icons/lu';
 import { SectionTitle } from './sections';
 import type { NodeKind, Review } from '../../domain/types';
@@ -139,6 +140,40 @@ function PaletteTile({
   );
 }
 
+// --- NEW COMPONENT: TRASH ZONE ---
+function TrashZone() {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'TRASH_ZONE',
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        margin: '12px 24px 20px',
+        height: 140, // Increased height (was 64)
+        borderRadius: 12,
+        border: '2px dashed',
+        borderColor: isOver ? '#ef4444' : '#cbd5e1',
+        background: isOver ? '#fef2f2' : 'transparent',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        color: isOver ? '#ef4444' : '#94a3b8',
+        fontSize: 12,
+        fontWeight: 600,
+        transition: 'all 0.2s ease',
+        flexShrink: 0,
+      }}
+    >
+      <LuTrash2 size={24} />
+      <span>{isOver ? 'Release to Cancel' : 'Drop here to cancel'}</span>
+    </div>
+  );
+}
+
 type SideMenuProps = {
   isOpen: boolean;
   onToggle: () => void;
@@ -148,6 +183,7 @@ type SideMenuProps = {
   onSelectTarget?: (id: string) => void;
   nodes?: any[];
   edges?: any[];
+  isDragging?: boolean;
 };
 
 export default function SideMenu({
@@ -159,6 +195,7 @@ export default function SideMenu({
   onSelectTarget,
   nodes = [],
   edges = [],
+  isDragging = false,
 }: SideMenuProps) {
   const collapsed = !isOpen;
   const width = collapsed ? 0 : SIDEBAR_W;
@@ -175,7 +212,7 @@ export default function SideMenu({
     Object.entries(reviewsByTarget).forEach(([targetId, reviews]) => {
       let name = nodeNames[targetId] || 'Unknown';
 
-      // 1. Check if it's a Node to add context (e.g. Graph type)
+      // 1. Check if it's a Node to add context
       const node = nodes.find((n) => n.id === targetId);
       if (node) {
         if (node.data.kind === 'Graph' && node.data.graphType) {
@@ -186,7 +223,6 @@ export default function SideMenu({
       else {
         const edge = edges.find((e) => e.id === targetId);
         if (edge) {
-          // Format: "Edge • Interaction" or "Edge • Tooltip"
           const type = edge.type
             ? edge.type.charAt(0).toUpperCase() + edge.type.slice(1)
             : 'Generic';
@@ -211,11 +247,8 @@ export default function SideMenu({
     });
   }, [reviewMode, reviewsByTarget, nodeNames, nodes, edges]);
 
-  // --- EVENTS HANDLER TO STOP BUBBLING ---
-  // This ensures that clicks on the sidebar never reach the canvas
   const stopEvents = (e: React.SyntheticEvent) => {
     e.stopPropagation();
-    // e.preventDefault(); // Optional: might block scroll, use with caution
   };
 
   const toggleButtonStyle: React.CSSProperties = {
@@ -239,7 +272,6 @@ export default function SideMenu({
     <>
       <aside
         className="sidebar no-scrollbar"
-        // STOP PROPAGATION HERE
         onClick={stopEvents}
         onMouseDown={stopEvents}
         onPointerDown={stopEvents}
@@ -254,13 +286,11 @@ export default function SideMenu({
           borderRadius: collapsed ? 0 : 20,
           display: 'flex',
           flexDirection: 'column',
-          overflowY: collapsed ? 'hidden' : 'auto',
-          overflowX: 'hidden',
+          overflow: 'hidden', // Changed from auto to hidden to manage flex children
           transition: 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)',
           position: 'relative',
           zIndex: 50,
           boxShadow: collapsed ? 'none' : '0 4px 12px rgba(0,0,0,0.03)',
-          // Ensure it catches pointer events
           pointerEvents: 'auto',
         }}
       >
@@ -276,6 +306,7 @@ export default function SideMenu({
               top: 0,
               background: '#fafafa',
               zIndex: 10,
+              flexShrink: 0,
             }}
           >
             <div
@@ -309,12 +340,15 @@ export default function SideMenu({
           </div>
         )}
 
+        {/* Content Area - Scrollable */}
         {!collapsed && (
           <div
             style={{
               padding: '0 24px 20px',
               opacity: collapsed ? 0 : 1,
               transition: 'opacity 150ms ease',
+              flex: 1, // Takes remaining height
+              overflowY: 'auto', // Scroll happens here
             }}
           >
             {reviewMode ? (
@@ -347,6 +381,12 @@ export default function SideMenu({
                     style={{
                       appearance: 'none',
                       background: '#fff',
+                      border: review.resolved
+                        ? '1px solid #86efac'
+                        : '1px solid #fca5a5',
+                      borderLeft: review.resolved
+                        ? '4px solid #22c55e'
+                        : '4px solid #ef4444',
                       borderRadius: 8,
                       padding: '12px',
                       textAlign: 'left',
@@ -357,16 +397,6 @@ export default function SideMenu({
                       boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
                       transition: 'transform 0.1s, box-shadow 0.1s',
                       width: '100%',
-
-                      // 1. Base Border (Thin colored outline)
-                      border: review.resolved
-                        ? '1px solid #86efac' // Light Green
-                        : '1px solid #fca5a5', // Light Red
-
-                      // 2. Left Border (Thick status bar) - defined AFTER to override
-                      borderLeft: review.resolved
-                        ? '4px solid #22c55e' // Strong Green
-                        : '4px solid #ef4444', // Strong Red
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-1px)';
@@ -387,22 +417,38 @@ export default function SideMenu({
                         width: '100%',
                       }}
                     >
-                      <span
+                      <div
                         style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: '#64748b',
-                          textTransform: 'uppercase',
-                          letterSpacing: 0.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          overflow: 'hidden',
                         }}
                       >
-                        {targetName}
-                      </span>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: '#64748b',
+                            textTransform: 'uppercase',
+                            letterSpacing: 0.5,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {targetName}
+                        </span>
+                      </div>
                       {review.resolved && (
-                        <LuCheck size={14} color="#22c55e" title="Resolved" />
+                        <LuCheck
+                          size={14}
+                          color="#22c55e"
+                          title="Resolved"
+                          style={{ flexShrink: 0 }}
+                        />
                       )}
                     </div>
-
                     <div
                       style={{
                         fontSize: 13,
@@ -413,7 +459,6 @@ export default function SideMenu({
                     >
                       {review.text}
                     </div>
-
                     <div
                       style={{
                         fontSize: 10,
@@ -456,6 +501,9 @@ export default function SideMenu({
             )}
           </div>
         )}
+
+        {/* --- TRASH ZONE (Visible in Editor Mode) --- */}
+        {!collapsed && !reviewMode && isDragging && <TrashZone />}
       </aside>
 
       {collapsed && (
