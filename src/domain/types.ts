@@ -122,7 +122,7 @@ function isBadgeable(kind: NodeKind): kind is BadgeableKind {
 
 function nextIndexFor(
   kind: NodeKind,
-  nodes: Array<{ data?: { kind?: NodeKind; badge?: string } | undefined }>
+  nodes: Array<{ data?: { kind?: NodeKind; badge?: string } | undefined }>,
 ): number | undefined {
   if (!isBadgeable(kind)) return undefined;
   const prefix = KIND_PREFIX[kind]!;
@@ -138,7 +138,7 @@ function nextIndexFor(
 
 export function nextBadgeFor(
   kind: NodeKind,
-  nodes: Array<{ data?: { kind?: NodeKind; badge?: string } | undefined }>
+  nodes: Array<{ data?: { kind?: NodeKind; badge?: string } | undefined }>,
 ): string | undefined {
   const idx = nextIndexFor(kind, nodes);
   if (idx == null) return undefined;
@@ -147,13 +147,11 @@ export function nextBadgeFor(
 
 interface DashboardNodeData extends NodeDataBase {
   kind: 'Dashboard';
-  objectives?: string[];
 }
 
 interface VisualizationNodeData extends NodeDataBase {
   kind: 'Visualization';
-  objectives?: string[];
-  data?: DataItem[]; // Now uses objects with IDs
+  data?: DataItem[];
   tooltips?: string[];
   graphTypes?: GraphType[];
   visualVars?: VisualVariable[];
