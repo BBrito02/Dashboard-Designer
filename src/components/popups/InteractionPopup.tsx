@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type {
   InteractionType,
   InteractionResult,
@@ -8,7 +8,7 @@ import type {
 type SourceType = 'component' | 'data';
 
 type DataAttrOption = {
-  ref: string; // THIS IS NOW THE STABLE ID (UUID)
+  ref: string;
   label: string;
 };
 
@@ -63,7 +63,6 @@ const ALLOWED_RESULTS: Partial<Record<NodeKind, InteractionResult[]>> = {
   Button: ['dashboard'],
   Filter: ['filter'],
   Parameter: ['binding' as InteractionResult],
-  // Updated Visualization results:
   Visualization: ['filter', 'highlight', 'dashboard'],
   Graph: ['filter', 'highlight', 'dashboard', 'link'],
   Tooltip: ['filter', 'highlight', 'dashboard', 'link'],
@@ -92,24 +91,15 @@ export default function InteractionPopup({
   const isLegend = sourceKind === 'Legend';
   const isVisualization = sourceKind === 'Visualization';
 
-  // Group special behaviors
-
-  // Nodes that enforce Trigger='click' and Source='component' (Hides these UI sections)
-  // Visualization is NOT here because it allows click/hover and component/data
   const hasFixedTriggerSource = isParameter || isFilter || isButton || isLegend;
-
-  // Nodes that enforce a specific single Result (Hides Dropdown, shows Label)
   const hasFixedResult = isParameter || isFilter || isButton;
 
   // --- Defaults ---
   const [name, setName] = useState(initialName);
-
-  // Force defaults for Fixed Nodes
   const [trigger, setTrigger] = useState<InteractionType>(
-    hasFixedTriggerSource ? ('click' as InteractionType) : initialType
+    hasFixedTriggerSource ? ('click' as InteractionType) : initialType,
   );
 
-  // Determine initial result based on node type
   const [result, setResult] = useState<InteractionResult>(() => {
     if (isParameter) return 'binding' as InteractionResult;
     if (isFilter) return 'filter';
@@ -121,17 +111,16 @@ export default function InteractionPopup({
   const isDashboard = result === 'dashboard';
 
   const [selected, setSelected] = useState<Set<string>>(
-    () => new Set(initialTargets)
+    () => new Set(initialTargets),
   );
 
   const hasSourceDataAttrs = dataAttributes.length > 0;
 
-  // Force 'component' source for Fixed Nodes
   const [sourceType, setSourceType] = useState<SourceType>(
-    hasFixedTriggerSource ? 'component' : 'component'
+    hasFixedTriggerSource ? 'component' : 'component',
   );
   const [sourceDataRef, setSourceDataRef] = useState<string>(
-    dataAttributes[0]?.ref ?? ''
+    dataAttributes[0]?.ref ?? '',
   );
 
   const allowedResults = useMemo(() => {
@@ -141,7 +130,6 @@ export default function InteractionPopup({
     );
   }, [sourceKind]);
 
-  // Enforce Constraints
   useEffect(() => {
     if (isParameter) {
       setTrigger('click');
@@ -164,10 +152,7 @@ export default function InteractionPopup({
     if (isLegend) {
       setTrigger('click');
       setSourceType('component');
-      // Result is mutable for Legend
     }
-    // Visualization has no fixed constraints on load,
-    // but we ensure the current result is valid
     if (allowedResults.length > 0 && !allowedResults.includes(result)) {
       setResult(allowedResults[0]);
     }
@@ -175,7 +160,6 @@ export default function InteractionPopup({
 
   useEffect(() => {
     if (hasFixedTriggerSource) return;
-    // For standard nodes (Visualization, etc), ensure source validity
     if (!hasSourceDataAttrs) {
       setSourceType('component');
       setSourceDataRef('');
@@ -191,7 +175,6 @@ export default function InteractionPopup({
     hasFixedTriggerSource,
   ]);
 
-  // Use all targets except Graphs (internal)
   const validTargets = useMemo(() => {
     return availableTargets.filter((t) => t.kind !== 'Graph');
   }, [availableTargets]);
@@ -224,17 +207,8 @@ export default function InteractionPopup({
     (isDashboard ? newDashName.trim().length > 0 : selected.size > 0) &&
     (sourceType === 'component' || !!sourceDataRef);
 
+  // --- CHANGED: Removed auto-close refs and logic to allow scrolling ---
   const [open, setOpen] = useState(false);
-  const ddRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!ddRef.current) return;
-      if (!ddRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, []);
 
   const toggleKey = (key: string) => {
     setSelected((prev) => {
@@ -294,7 +268,6 @@ export default function InteractionPopup({
     let isUnavailable = false;
     let areAttributesUnavailable = false;
 
-    // PARAMETER LOGIC:
     if (isParameter) {
       if (t.kind !== 'Dashboard' && t.kind !== 'Visualization') {
         isUnavailable = true;
@@ -302,7 +275,6 @@ export default function InteractionPopup({
       }
     }
 
-    // FILTER LOGIC:
     if (isFilter) {
       const allowed = ['Visualization', 'Dashboard', 'Filter', 'Placeholder'];
       if (!allowed.includes(t.kind)) {
@@ -311,7 +283,6 @@ export default function InteractionPopup({
       }
     }
 
-    // LEGEND LOGIC:
     if (isLegend) {
       if (t.kind !== 'Visualization') {
         isUnavailable = true;
@@ -319,13 +290,11 @@ export default function InteractionPopup({
       areAttributesUnavailable = true;
     }
 
-    // VISUALIZATION LOGIC:
     if (isVisualization) {
       const allowed = ['Visualization', 'Legend'];
       if (!allowed.includes(t.kind)) {
         isUnavailable = true;
       }
-      // Usually filters/highlights target the component shell, so we disable attributes
       areAttributesUnavailable = true;
     }
 
@@ -335,13 +304,6 @@ export default function InteractionPopup({
           onClick={() => {
             if (!isUnavailable) toggleKey(t.id);
           }}
-          onKeyDown={(e) => {
-            if (!isUnavailable && (e.key === ' ' || e.key === 'Enter')) {
-              e.preventDefault();
-              toggleKey(t.id);
-            }
-          }}
-          tabIndex={isUnavailable ? -1 : 0}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -354,8 +316,8 @@ export default function InteractionPopup({
             background: isUnavailable
               ? '#f9fafb'
               : compChecked
-              ? '#eef2ff'
-              : 'transparent',
+                ? '#eef2ff'
+                : 'transparent',
             cursor: isUnavailable ? 'default' : 'pointer',
             userSelect: 'none',
           }}
@@ -397,16 +359,6 @@ export default function InteractionPopup({
                   onClick={() => {
                     if (!isAttrDisabled) toggleKey(key);
                   }}
-                  onKeyDown={(e) => {
-                    if (
-                      !isAttrDisabled &&
-                      (e.key === ' ' || e.key === 'Enter')
-                    ) {
-                      e.preventDefault();
-                      toggleKey(key);
-                    }
-                  }}
-                  tabIndex={isAttrDisabled ? -1 : 0}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -418,8 +370,8 @@ export default function InteractionPopup({
                     background: isAttrDisabled
                       ? '#f9fafb'
                       : checked
-                      ? '#ecfeff'
-                      : 'transparent',
+                        ? '#ecfeff'
+                        : 'transparent',
                     cursor: isAttrDisabled ? 'default' : 'pointer',
                     userSelect: 'none',
                     opacity: isAttrDisabled ? 0.5 : 1,
@@ -504,9 +456,6 @@ export default function InteractionPopup({
         />
       </section>
 
-      {/* --- TRIGGER UI --- */}
-      {/* Hidden for fixed nodes (Parameter / Filter / Button / Legend) */}
-      {/* Visible for Visualization */}
       {!hasFixedTriggerSource && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>
@@ -537,7 +486,6 @@ export default function InteractionPopup({
         </section>
       )}
 
-      {/* --- RESULT UI --- */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>
           Result
@@ -577,8 +525,6 @@ export default function InteractionPopup({
         )}
       </section>
 
-      {/* --- SOURCE UI --- */}
-      {/* Hidden for fixed nodes */}
       {!hasFixedTriggerSource && (
         <section style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>
@@ -676,7 +622,8 @@ export default function InteractionPopup({
           <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>
             Affected
           </div>
-          <div ref={ddRef} style={{ position: 'relative' }}>
+          {/* --- CHANGED: Dropdown is now a collapsible section in-flow --- */}
+          <div style={{ position: 'relative' }}>
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
@@ -697,23 +644,19 @@ export default function InteractionPopup({
               {selected.size > 0
                 ? `${selected.size} selected`
                 : 'Select components...'}{' '}
-              <span>▾</span>
+              <span>{open ? '▴' : '▾'}</span>
             </button>
             {open && (
               <div
                 style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
+                  // Position is NOT absolute anymore, pushing content down
                   marginTop: 4,
-                  maxHeight: 260,
+                  maxHeight: 300,
                   overflow: 'auto',
                   background: '#fff',
                   borderRadius: 12,
-                  boxShadow: '0 8px 20px rgba(15,23,42,0.18)',
+                  border: '1px solid #e2e8f0',
                   padding: 4,
-                  zIndex: 20,
                 }}
               >
                 {rootTargets.map((t) => renderTargetRow(t, 0))}
