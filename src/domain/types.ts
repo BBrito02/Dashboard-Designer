@@ -187,7 +187,6 @@ interface ParameterNodeData extends NodeDataBase {
 
 interface PlaceholderNodeData extends NodeDataBase {
   kind: 'Placeholder';
-  image?: string;
 }
 
 export interface GraphNodeData extends NodeDataBase {
