@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import type { Review } from '../../domain/types';
 import { SectionTitle, NameField } from '../menus/sections';
 import {
@@ -19,8 +19,8 @@ function PriorityPill({ level }: { level: Review['priority'] }) {
     norm === 'high'
       ? { bg: '#fef2f2', br: '#fecaca', fg: '#991b1b' }
       : norm === 'medium'
-      ? { bg: '#fffbeb', br: '#fde68a', fg: '#92400e' }
-      : { bg: '#ecfdf5', br: '#a7f3d0', fg: '#065f46' };
+        ? { bg: '#fffbeb', br: '#fde68a', fg: '#92400e' }
+        : { bg: '#ecfdf5', br: '#a7f3d0', fg: '#065f46' };
 
   return (
     <span
@@ -44,8 +44,6 @@ function PriorityPill({ level }: { level: Review['priority'] }) {
   );
 }
 
-// CategoryPill removed
-
 export default function ReviewMenu({
   targetLabel,
   reviews,
@@ -61,9 +59,8 @@ export default function ReviewMenu({
   reviews: Review[];
   onCreate: (
     text: string,
-    // category arg removed
     priority: Review['priority'],
-    author: string
+    author: string,
   ) => void;
   onToggle: (id: string, nextResolved: boolean) => void;
   onDelete: (id: string) => void;
@@ -76,21 +73,37 @@ export default function ReviewMenu({
 
   // Add Form State
   const [text, setText] = useState('');
-  // category state removed
   const [priority, setPriority] = useState<Review['priority']>('Medium');
-  // customCategory state removed
 
   // Edit State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
-  // editCategory state removed
   const [editPriority, setEditPriority] =
     useState<Review['priority']>('Medium');
-  // editCustomCategory state removed
 
   // Reply State
   const [replyingId, setReplyingId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+
+  // Textarea Refs for Auto-resize
+  const newReviewRef = useRef<HTMLTextAreaElement>(null);
+  const editReviewRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize New Review Textarea
+  useEffect(() => {
+    if (newReviewRef.current) {
+      newReviewRef.current.style.height = 'auto'; // Reset height to calculate scroll height
+      newReviewRef.current.style.height = `${newReviewRef.current.scrollHeight}px`;
+    }
+  }, [text]);
+
+  // Auto-resize Edit Review Textarea
+  useEffect(() => {
+    if (editReviewRef.current) {
+      editReviewRef.current.style.height = 'auto';
+      editReviewRef.current.style.height = `${editReviewRef.current.scrollHeight}px`;
+    }
+  }, [editText, editingId]); // Run when text changes or when entering edit mode
 
   const sorted = useMemo(() => {
     const list = [...reviews];
@@ -222,11 +235,17 @@ export default function ReviewMenu({
           </div>
 
           <textarea
+            ref={newReviewRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={3}
             placeholder="What should be improved?"
-            style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+            style={{
+              ...inputStyle,
+              resize: 'none', // Prevent manual resizing since it's auto-sized
+              overflow: 'hidden', // Hide scrollbar during resizing
+              fontFamily: 'inherit',
+            }}
           />
 
           <button
@@ -308,7 +327,6 @@ export default function ReviewMenu({
                 {!isEditing && (
                   <>
                     <span style={{ color: '#cbd5e1' }}>•</span>
-                    {/* CategoryPill removed */}
                     {r.priority && <PriorityPill level={r.priority} />}
                   </>
                 )}
@@ -372,13 +390,16 @@ export default function ReviewMenu({
                     </div>
                   </div>
 
-                  {/* Custom category input removed */}
-
                   <textarea
+                    ref={editReviewRef}
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
                     rows={3}
-                    style={{ ...inputStyle, resize: 'vertical' }}
+                    style={{
+                      ...inputStyle,
+                      resize: 'none', // Prevent manual resizing
+                      overflow: 'hidden', // Hide scrollbar during resizing
+                    }}
                   />
 
                   <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
