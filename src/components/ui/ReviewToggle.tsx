@@ -25,7 +25,7 @@ export default function ReviewToggle({
 
   // Compact sizes
   const H = 22;
-  const W = 88;
+  const W = 55;
   const PAD = 2;
   const KNOB = H - PAD * 2; // 18
 
