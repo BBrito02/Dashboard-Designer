@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Dispatch, SetStateAction, RefObject } from 'react';
 import {
   useSensors,
@@ -15,11 +15,7 @@ import type { NodeData, NodeKind } from '../domain/types';
 import { allowedChildKinds } from '../domain/rules';
 import { nextBadgeFor } from '../domain/types';
 import type { DragData } from '../components/menus/SideMenu';
-import {
-  depthOf,
-  isContainerKind,
-  getAbsolutePosition,
-} from '../domain/layoutUtils';
+import { depthOf, getAbsolutePosition } from '../domain/layoutUtils';
 
 type AppNode = RFNode<NodeData>;
 
@@ -70,15 +66,18 @@ export function useCanvasDrag(
     x: number;
     y: number;
   } | null>(null);
-  const [, setCursorPoint] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
+  const [, setCursorPoint] = useState<{ x: number; y: number } | null>(null);
   const [dragTargetParentId, setDragTargetParentId] = useState<string | null>(
     null,
   );
   const [dragAllowed, setDragAllowed] = useState(false);
   const [cachedContainers, setCachedContainers] = useState<AppNode[]>([]);
+
+  // Track the last dispatched target to prevent redundant event firings
+  const lastTargetRef = useRef<{ id: string | null; allowed: boolean }>({
+    id: null,
+    allowed: false,
+  });
 
   function getPointFromEvent(ev: Event): { x: number; y: number } | null {
     if ('clientX' in ev && 'clientY' in ev) {
@@ -115,10 +114,8 @@ export function useCanvasDrag(
     setDragStartPoint(p);
     setCursorPoint(p);
 
-    const containers = nodes.filter(
-      (n) => !n.hidden && isContainerKind(n.data?.kind),
-    );
-    setCachedContainers(containers);
+    const targetableNodes = nodes.filter((n) => !n.hidden);
+    setCachedContainers(targetableNodes);
   };
 
   const handleDragMove = (e: DragMoveEvent) => {
@@ -156,27 +153,61 @@ export function useCanvasDrag(
       }
     }
 
-    const parentId = best?.id ?? null;
-    const parentKind = best?.kind;
-    setDragTargetParentId(parentId);
-
     const payload = e.active?.data?.current as DragData | undefined;
     const childKind = payload?.kind as NodeKind | undefined;
-    const isAllowed = !!(
-      parentKind &&
-      childKind &&
-      allowedChildKinds(parentKind).includes(childKind)
-    );
+
+    let targetParentId: string | null = null;
+    let isAllowed = false;
+
+    if (best && childKind) {
+      let currentId: string | undefined = best.id;
+      let foundAllowed = false;
+
+      while (currentId) {
+        const currentNode = cachedContainers.find((n) => n.id === currentId);
+        if (!currentNode) break;
+
+        const currentKind = currentNode.data.kind;
+        if (currentKind && allowedChildKinds(currentKind).includes(childKind)) {
+          targetParentId = currentId;
+          foundAllowed = true;
+          break;
+        }
+        currentId = currentNode.parentNode;
+      }
+
+      if (foundAllowed) {
+        isAllowed = true;
+      } else {
+        targetParentId = best.id;
+        isAllowed = false;
+      }
+    }
+
+    // Dispatch event to inform specific nodes of their drag-over status
+    if (
+      lastTargetRef.current.id !== targetParentId ||
+      lastTargetRef.current.allowed !== isAllowed
+    ) {
+      lastTargetRef.current = { id: targetParentId, allowed: isAllowed };
+      window.dispatchEvent(
+        new CustomEvent('designer:drag-target', {
+          detail: { targetId: targetParentId, allowed: isAllowed },
+        }),
+      );
+    }
+
+    setDragTargetParentId(targetParentId);
     setDragAllowed(isAllowed);
 
-    if (parentId) {
+    if (targetParentId) {
       document.body.style.cursor = isAllowed ? 'copy' : 'not-allowed';
     } else {
       document.body.style.cursor = 'grabbing';
     }
   };
 
-  const handleDragCancel = (_e: DragCancelEvent) => {
+  const clearDragState = () => {
     setIsDraggingFromPalette(false);
     setDragPreview(null);
     setDragStartPoint(null);
@@ -184,31 +215,32 @@ export function useCanvasDrag(
     setDragTargetParentId(null);
     setDragAllowed(false);
     document.body.style.cursor = '';
+
+    if (lastTargetRef.current.id !== null) {
+      lastTargetRef.current = { id: null, allowed: false };
+      window.dispatchEvent(
+        new CustomEvent('designer:drag-target', {
+          detail: { targetId: null, allowed: false },
+        }),
+      );
+    }
+  };
+
+  const handleDragCancel = (_e: DragCancelEvent) => {
+    clearDragState();
   };
 
   const handleDragEnd = (e: DragEndEvent) => {
-    // --- NEW: Check for Trash Zone ---
     if (e.over && e.over.id === 'TRASH_ZONE') {
-      setIsDraggingFromPalette(false);
-      setDragPreview(null);
-      setDragStartPoint(null);
-      setCursorPoint(null);
-      setDragTargetParentId(null);
-      setDragAllowed(false);
-      document.body.style.cursor = '';
-      return; // Stop execution (Cancel Drag)
+      clearDragState();
+      return;
     }
-    // ---------------------------------
 
-    setIsDraggingFromPalette(false);
     const payload = e.active.data.current as DragData | undefined;
-    setDragPreview(null);
-
     const parentId = dragTargetParentId;
     const allowed = dragAllowed;
-    setDragTargetParentId(null);
-    setDragAllowed(false);
-    document.body.style.cursor = '';
+
+    clearDragState(); // Resets tracking state, events, and cursors
 
     if (!payload || !rf || !wrapperRef.current) return;
 
@@ -221,25 +253,23 @@ export function useCanvasDrag(
       y: viewportPt.y,
     });
 
-    if (allowed && parentId) {
-      const parentNode = nodes.find((n) => n.id === parentId);
-      if (parentNode) {
-        const abs = getAbsolutePosition(parentNode, nodes);
-        const relX = flowCenter.x - abs.x;
-        const relY = flowCenter.y - abs.y;
-        onDropInParent(parentId, payload.kind as NodeKind, {
-          x: relX,
-          y: relY,
-        });
-      } else {
-        onDropInParent(parentId, payload.kind as NodeKind);
+    if (parentId) {
+      if (allowed) {
+        const parentNode = nodes.find((n) => n.id === parentId);
+        if (parentNode) {
+          const abs = getAbsolutePosition(parentNode, nodes);
+          const relX = flowCenter.x - abs.x;
+          const relY = flowCenter.y - abs.y;
+          onDropInParent(parentId, payload.kind as NodeKind, {
+            x: relX,
+            y: relY,
+          });
+        } else {
+          onDropInParent(parentId, payload.kind as NodeKind);
+        }
       }
       return;
     }
-
-    // Root Drop Logic
-    setDragStartPoint(null);
-    setCursorPoint(null);
 
     takeSnapshot();
 

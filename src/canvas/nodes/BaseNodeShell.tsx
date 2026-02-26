@@ -4,7 +4,7 @@ import {
   useUpdateNodeInternals,
   type NodeProps,
 } from 'reactflow';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { NodeResizer } from '@reactflow/node-resizer';
 import '@reactflow/node-resizer/dist/style.css';
@@ -14,7 +14,6 @@ import type { NodeData, DataItem, VisualVariable } from '../../domain/types';
 import { VISUAL_VAR_ICONS } from '../../domain/icons';
 
 import ClickHoverPorts from '../nodes/ClickHoverPorts';
-
 import ReviewBadge from '../../components/ui/ReviewBadge';
 import { useReviews } from '../../components/ui/ReviewContext';
 
@@ -33,7 +32,7 @@ const MIN_SIZE: Record<string, { w: number; h: number }> = {
 
 export type BaseNodeShellProps = NodeProps<NodeData> & {
   body?: React.ReactNode;
-  footerItems?: DataItem[]; // Changed to strict DataItem[]
+  footerItems?: DataItem[];
   visualVars?: VisualVariable[];
   tooltipCount?: number;
   perspectiveCount?: number;
@@ -60,7 +59,7 @@ export type BaseNodeShellProps = NodeProps<NodeData> & {
 };
 
 function stripBorderStyles(
-  s?: React.CSSProperties
+  s?: React.CSSProperties,
 ): React.CSSProperties | undefined {
   if (!s) return s;
   const {
@@ -108,7 +107,6 @@ function DataPills({
       }}
     >
       {items.map((it, i) => {
-        // --- Use Stable ID for Handles ---
         const handleId = `data:${it.id}`;
         const label = it.name;
         const title = `${it.name} · ${it.dtype}`;
@@ -146,7 +144,6 @@ function DataPills({
               {label}
             </button>
 
-            {/* Target Handle (Top) - Connects to data:{id}:target */}
             <Handle
               id={`${handleId}:target`}
               type="target"
@@ -167,7 +164,6 @@ function DataPills({
               }}
             />
 
-            {/* Source Handles (Bottom) */}
             <Handle
               id={`${handleId}:click`}
               type="source"
@@ -183,7 +179,7 @@ function DataPills({
                 borderWidth: 1,
                 borderStyle: 'solid',
                 borderColor: '#222',
-                background: '#3b82f6', // Blue for click
+                background: '#3b82f6',
                 zIndex: 10,
               }}
             />
@@ -202,7 +198,7 @@ function DataPills({
                 borderWidth: 1,
                 borderStyle: 'solid',
                 borderColor: '#222',
-                background: '#fbbf24', // Amber for hover
+                background: '#fbbf24',
                 zIndex: 10,
               }}
             />
@@ -236,7 +232,7 @@ export default function BaseNodeShell({
   overlayTopRight,
 }: BaseNodeShellProps) {
   const updateNodeInternals = useUpdateNodeInternals();
-  const { setNodeRef, isOver } = useDroppable({ id });
+  const { setNodeRef } = useDroppable({ id });
 
   const minW = MIN_SIZE[data.kind]?.w ?? 180;
   const minH = MIN_SIZE[data.kind]?.h ?? 100;
@@ -250,12 +246,11 @@ export default function BaseNodeShell({
   const interactionCount = (data as any).interactionEdgeCount ?? 0;
   const interactionsHidden = !!(data as any).interactionsHidden;
 
-  // --- REVERTED: Always show footer items (Data Attributes) ---
   const visibleFooterItems = footerItems;
 
   const pillHandleIds = useMemo(
     () => (visibleFooterItems ?? []).map((it) => `data:${it.id}`),
-    [visibleFooterItems]
+    [visibleFooterItems],
   );
 
   useEffect(() => {
@@ -273,29 +268,56 @@ export default function BaseNodeShell({
   const hasFooter =
     Array.isArray(visibleFooterItems) && visibleFooterItems.length > 0;
 
-  // --- HIGHLIGHT LOGIC ---
+  // --- HOVER / DRAG EFFECT LOGIC ---
+  const [dragHoverStatus, setDragHoverStatus] = useState<
+    'allowed' | 'blocked' | null
+  >(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { targetId, allowed } = (e as CustomEvent).detail;
+      if (targetId === id) {
+        setDragHoverStatus(allowed ? 'allowed' : 'blocked');
+      } else {
+        setDragHoverStatus((prev) => (prev !== null ? null : prev));
+      }
+    };
+    window.addEventListener('designer:drag-target', handler);
+    return () => window.removeEventListener('designer:drag-target', handler);
+  }, [id]);
+
   const isHighlighted = !!data.highlighted;
   const isSelected = selected || isHighlighted;
 
-  const dynamicBorderColor = isOver
-    ? '#38bdf8'
-    : isSelected
-    ? '#3b82f6' // Match Standard Blue
-    : 'transparent';
+  const dynamicBorderColor =
+    dragHoverStatus === 'allowed'
+      ? '#22c55e' // Allowed: Green
+      : dragHoverStatus === 'blocked'
+        ? '#ef4444' // Blocked: Red
+        : isSelected
+          ? '#3b82f6' // Match Standard Blue
+          : 'transparent';
 
   const borderColor = highlightBorder ? dynamicBorderColor : '#e5e7eb';
 
-  // Add Glow Effect for Highlighting
-  const boxShadow = isSelected
-    ? '0 0 0 2px rgba(59, 130, 246, 0.5)'
-    : '0 1px 3px rgba(0,0,0,0.06)';
+  // Add Glow Effect depending on the drag or selection status
+  const boxShadow =
+    dragHoverStatus === 'allowed'
+      ? '0 0 0 2px rgba(34, 197, 94, 0.5)'
+      : dragHoverStatus === 'blocked'
+        ? '0 0 0 2px rgba(239, 68, 68, 0.5)'
+        : isSelected
+          ? '0 0 0 2px rgba(59, 130, 246, 0.5)'
+          : '0 1px 3px rgba(0,0,0,0.06)';
 
   const cardStyleClean = stripBorderStyles(cardStyle) || {};
 
   const handlePillClick = (index: number) => {
     setTimeout(() => {
       window.dispatchEvent(
-        new CustomEvent('designer:edit-data', { detail: { nodeId: id, index } })
+        new CustomEvent('designer:edit-data', {
+          detail: { nodeId: id, index },
+        }),
       );
     }, 100);
   };
@@ -314,7 +336,7 @@ export default function BaseNodeShell({
       }}
     >
       <NodeResizer
-        isVisible={!!selected && !reviewMode} // Only show resize handles when actually selected (not just highlighted)
+        isVisible={!!selected && !reviewMode}
         minWidth={minW}
         minHeight={minH}
         handleStyle={{ width: 12, height: 12, borderRadius: 4 }}
@@ -336,7 +358,7 @@ export default function BaseNodeShell({
           borderWidth,
           borderStyle: 'solid',
           borderColor,
-          boxShadow, // Applied here
+          boxShadow,
           overflow: isParameter ? 'visible' : 'hidden',
           boxSizing: 'border-box',
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -420,7 +442,7 @@ export default function BaseNodeShell({
                       window.dispatchEvent(
                         new CustomEvent('designer:open-visualvars', {
                           detail: { nodeId: id },
-                        })
+                        }),
                       );
                     }}
                     style={{
@@ -469,7 +491,6 @@ export default function BaseNodeShell({
                   T({tooltipCount})
                 </span>
               )}
-              {/* Interaction Counter Badge */}
               {interactionsHidden && interactionCount > 0 && (
                 <span
                   title={`${interactionCount} hidden interaction edge${
@@ -576,7 +597,6 @@ export default function BaseNodeShell({
             right: 8,
             zIndex: 5,
             pointerEvents: 'auto',
-            // ADDED FLEX PROPERTIES FOR ALIGNMENT:
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center',
