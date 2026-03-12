@@ -63,6 +63,7 @@ import SavePopup from './components/popups/SavePopup';
 import InteractionPopup from './components/popups/InteractionPopup';
 import TooltipPopup from './components/popups/TooltipPopup';
 import GraphTypePopup from './components/popups/GraphTypePopup';
+import LoadPopup from './components/popups/LoadPopup';
 
 import NodeGhost from './canvas/nodes/NodeGhost';
 import InteractionEdgeMenu from './components/menus/InteractionEdgeMenu';
@@ -2246,7 +2247,38 @@ export default function Editor() {
               <FaCloudDownloadAlt size={16} />
               <span>Save</span>
             </button>
-            <label
+            <button
+              onClick={() => {
+                openModal({
+                  title: 'Load Dashboard',
+                  node: (
+                    <LoadPopup
+                      onCancel={closeModal}
+                      onLoadFile={async (file) => {
+                        closeModal();
+                        setSaveNameBase(baseFrom(file.name));
+                        try {
+                          let data;
+                          if (file.name.endsWith('.json')) {
+                            const text = await file.text();
+                            data = JSON.parse(text);
+                          } else {
+                            data = await loadProjectFromZip(file);
+                          }
+                          if (!('version' in data)) {
+                            alert('Invalid file format');
+                            return;
+                          }
+                          loadSave(data);
+                        } catch (err) {
+                          console.error(err);
+                          alert('Failed to load.');
+                        }
+                      }}
+                    />
+                  ),
+                });
+              }}
               style={{
                 padding: '6px 10px',
                 borderRadius: 8,
@@ -2260,35 +2292,7 @@ export default function Editor() {
             >
               <FaCloudUploadAlt size={16} />
               <span>Load</span>
-              <input
-                type="file"
-                accept=".json,.dashboard,.zip"
-                style={{ display: 'none' }}
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  e.target.value = '';
-                  if (!file) return;
-                  setSaveNameBase(baseFrom(file.name));
-                  try {
-                    let data;
-                    if (file.name.endsWith('.json')) {
-                      const text = await file.text();
-                      data = JSON.parse(text);
-                    } else {
-                      data = await loadProjectFromZip(file);
-                    }
-                    if (!('version' in data)) {
-                      alert('Invalid file format');
-                      return;
-                    }
-                    loadSave(data);
-                  } catch (err) {
-                    console.error(err);
-                    alert('Failed to load.');
-                  }
-                }}
-              />
-            </label>
+            </button>
           </div>
 
           <div
