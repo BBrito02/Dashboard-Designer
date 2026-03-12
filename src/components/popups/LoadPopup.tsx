@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { FaCloudUploadAlt, FaFileAlt, FaSpinner } from 'react-icons/fa';
 
 // These match the files in your public/saved_dashboards folder
