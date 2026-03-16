@@ -23,6 +23,8 @@ import {
   LuRefreshCw, // Reset/Update result
 } from 'react-icons/lu';
 
+import { FaHighlighter } from 'react-icons/fa';
+
 type AppEdge = RFEdge<any>;
 
 type Props = {
@@ -41,6 +43,7 @@ const ICON_MAP: Record<string, IconType> = {
   Legend: LuList,
   Button: LuMousePointerClick,
   Filter: LuFilter,
+  Highlight: FaHighlighter,
   Parameter: LuSlidersHorizontal,
   Action: LuZap,
   Placeholder: LuImageOff,
@@ -100,28 +103,32 @@ export default function InteractionEdgeMenu({
 
   return (
     <EdgesMenu>
-      <div style={{ fontWeight: 700, textAlign: 'center' }}>
-        Interaction Edge
+      <div
+        style={{
+          fontWeight: 700,
+          textAlign: 'center',
+          marginBottom: 16, // slightly increased bottom margin for breathing room
+          color: '#333',
+          fontSize: '15px',
+          padding: '0 36px', // <-- THIS is the fix: adds 36px of empty space on the left and right
+          lineHeight: '1.3', // Keeps the spacing looking good if the title wraps to two lines
+        }}
+      >
+        {label ? label : 'Interaction Edge'}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <SectionTitle>Properties</SectionTitle>
+        <SectionTitle>Configuration</SectionTitle>
 
-        {/* <NameField
-          value={label || `${fromLabel} → ${toLabel}`}
-          placeholder="Interaction name"
-          disabled={true}
-          onChange={() => {}}
-        /> */}
+        {/* Shows the custom name of the interaction if it exists */}
+        {label && <TypeField value={label} label="Name" icon={LuTag} />}
 
-        {/* General type icon */}
-        <TypeField value="Interaction" label="Edge type" icon={LuZap} />
-
-        <SectionTitle>Connection</SectionTitle>
-        <TypeField value={fromLabel} label="Source" icon={SourceIcon} />
-        <TypeField value={toLabel} label="Target" icon={TargetIcon} />
-        <TypeField value={trigger} label="Activation" icon={TriggerIcon} />
+        <TypeField value={trigger} label="Trigger" icon={TriggerIcon} />
         <TypeField value={result} label="Result" icon={ResultIcon} />
+
+        <SectionTitle>Connection Targets</SectionTitle>
+        <TypeField value={fromLabel} label="From" icon={SourceIcon} />
+        <TypeField value={toLabel} label="To" icon={TargetIcon} />
       </div>
 
       {onDelete && (
@@ -143,6 +150,7 @@ export default function InteractionEdgeMenu({
               color: '#ef4444',
               fontSize: 13,
               cursor: 'pointer',
+              fontWeight: 500,
             }}
           >
             Delete interaction edge
