@@ -25,6 +25,7 @@ import {
   FaRedo,
   FaEye,
   FaEyeSlash,
+  FaHome,
 } from 'react-icons/fa';
 import { FaHand } from 'react-icons/fa6';
 
@@ -174,7 +175,17 @@ function ModalCleanup({
  * Main Editor component
  * ===================================================== */
 
-export default function Editor() {
+interface EditorProps {
+  initialData?: any;
+  initialProjectName?: string;
+  onGoHome?: () => void;
+}
+
+export default function Editor({
+  initialData,
+  initialProjectName,
+  onGoHome,
+}: EditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<NodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<AppEdge>([]);
   const [rf, setRf] = useState<ReactFlowInstance | null>(null);
@@ -277,7 +288,9 @@ export default function Editor() {
   const [reviewsByTarget, setReviewsByTarget] = useState<
     Record<string, Review[]>
   >({});
-  const [saveNameBase, setSaveNameBase] = useState('dashboard-designer');
+  const [saveNameBase, setSaveNameBase] = useState(
+    initialProjectName || 'dashboard-designer',
+  );
   const { openModal, closeModal } = useModal();
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -1611,6 +1624,14 @@ export default function Editor() {
     [rf, setNodes, setEdges],
   );
 
+  const hasLoadedInitialData = useRef(false);
+  useEffect(() => {
+    if (initialData && rf && !hasLoadedInitialData.current) {
+      loadSave(initialData);
+      hasLoadedInitialData.current = true;
+    }
+  }, [initialData, rf, loadSave]);
+
   const openSaveModal = useCallback(() => {
     openModal({
       title: 'Save Project',
@@ -2201,6 +2222,26 @@ export default function Editor() {
               transition: `transform ${PANEL_ANIM_MS}ms ease`,
             }}
           >
+            {onGoHome && (
+              <button
+                onClick={onGoHome}
+                title="Go to Home Menu"
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: 8,
+                  border: '1px solid #ddd',
+                  background: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  marginRight: 'auto', // Keeps it pushed to the left of the undo button
+                }}
+              >
+                <FaHome size={16} />
+                <span>Home</span>
+              </button>
+            )}
             <button
               onClick={undo}
               disabled={!canUndo}
@@ -2247,7 +2288,7 @@ export default function Editor() {
               <FaCloudDownloadAlt size={16} />
               <span>Save</span>
             </button>
-            <button
+            {/* <button
               onClick={() => {
                 openModal({
                   title: 'Load Dashboard',
@@ -2292,7 +2333,7 @@ export default function Editor() {
             >
               <FaCloudUploadAlt size={16} />
               <span>Load</span>
-            </button>
+            </button> */}
           </div>
 
           <div
