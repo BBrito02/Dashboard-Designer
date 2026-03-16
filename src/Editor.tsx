@@ -19,7 +19,7 @@ import { nanoid } from 'nanoid';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import {
   FaCloudDownloadAlt,
-  FaCloudUploadAlt,
+  //FaCloudUploadAlt,
   FaRegSquare,
   FaUndo,
   FaRedo,
@@ -64,7 +64,6 @@ import SavePopup from './components/popups/SavePopup';
 import InteractionPopup from './components/popups/InteractionPopup';
 import TooltipPopup from './components/popups/TooltipPopup';
 import GraphTypePopup from './components/popups/GraphTypePopup';
-import LoadPopup from './components/popups/LoadPopup';
 
 import NodeGhost from './canvas/nodes/NodeGhost';
 import InteractionEdgeMenu from './components/menus/InteractionEdgeMenu';
@@ -85,7 +84,7 @@ import GraphNode from './canvas/nodes/GraphNode';
 
 import { useModal } from './components/ui/ModalHost';
 import { useUndoRedo } from './hooks/useUndoRedo';
-import { saveProjectAsZip, loadProjectFromZip } from './utils/fileUtils';
+import { saveProjectAsZip } from './utils/fileUtils';
 import { ReviewContext } from './components/ui/ReviewContext';
 import { useLayoutConstraints } from './hooks/useLayoutConstraints';
 import { useCanvasDrag } from './hooks/useCanvasDrag';
