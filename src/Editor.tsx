@@ -2120,20 +2120,6 @@ export default function Editor({
     () => nodes.find((n) => n.id === selectedId),
     [nodes, selectedId],
   );
-  const selectedEdgeSource = useMemo(
-    () =>
-      selectedEdge
-        ? nodes.find((n) => n.id === selectedEdge.source)
-        : undefined,
-    [selectedEdge, nodes],
-  );
-  const selectedEdgeTarget = useMemo(
-    () =>
-      selectedEdge
-        ? nodes.find((n) => n.id === selectedEdge.target)
-        : undefined,
-    [selectedEdge, nodes],
-  );
 
   const parentDataForSelected = useMemo(() => {
     if (!selectedNode || (selectedNode.data as any)?.kind !== 'Graph')
