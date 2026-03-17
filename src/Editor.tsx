@@ -2633,12 +2633,10 @@ export default function Editor({
                 <TooltipEdgeMenu
                   edge={selectedEdge as AppEdge}
                   sourceTitle={
-                    (selectedEdgeSource?.data as any)?.title ??
-                    selectedEdge.source
+                    nodeNames[selectedEdge.source] ?? selectedEdge.source
                   }
                   targetTitle={
-                    (selectedEdgeTarget?.data as any)?.title ??
-                    selectedEdge.target
+                    nodeNames[selectedEdge.target] ?? selectedEdge.target
                   }
                   onDelete={() => {
                     pruneAfterRemoval([selectedEdge.target]);

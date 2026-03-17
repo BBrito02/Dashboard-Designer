@@ -1,103 +1,93 @@
-// src/components/menus/TooltipEdgeMenu.tsx
-import type { Edge as RFEdge } from 'reactflow';
 import EdgesMenu from './EdgesMenu';
-import { TypeField, SectionTitle } from './sections';
+import { SectionTitle, TypeField } from '../menus/sections';
 import {
-  LuChartColumnDecreasing,
-  LuInfo,
-  LuMousePointerClick, // Icon for 'Click'
-  LuMousePointer2, // Icon for 'Hover'
+  LuMousePointer2,
+  LuDatabase,
+  LuSettings2,
+  LuTag,
 } from 'react-icons/lu';
-
-type AppEdge = RFEdge<any>;
-
-type Props = {
-  edge: AppEdge;
-  sourceTitle?: string;
-  targetTitle?: string;
-  onDelete?: () => void;
-};
+import type { Edge as RFEdge } from 'reactflow';
 
 export default function TooltipEdgeMenu({
   edge,
   sourceTitle,
   targetTitle,
   onDelete,
-}: Props) {
-  const data = (edge.data || {}) as any;
+}: {
+  edge: RFEdge<any>;
+  sourceTitle: string;
+  targetTitle: string;
+  onDelete?: () => void;
+}) {
+  const data = edge.data || {};
+  const activation = data.activation || 'hover';
+  const attachRef = data.attachRef || 'viz';
+  const attachValue = data.attachValue;
 
-  // Simple helper to capitalize the first letter
-  const capitalize = (s: string) =>
-    typeof s === 'string' && s.length > 0
-      ? s.charAt(0).toUpperCase() + s.slice(1)
-      : s;
+  // Format the activation text (e.g., 'hover' -> 'Hover')
+  const formattedActivation =
+    activation.charAt(0).toUpperCase() + activation.slice(1);
 
-  const label = data.label ?? '';
+  // Strict labels for the attachment point
+  const attachedToLabel = attachRef === 'viz' ? 'Component' : 'Data Attribute';
 
-  // Logic for Activation
-  const rawActivation = data.activation ?? 'hover';
-  const activationLabel = capitalize(rawActivation);
-
-  // Select the icon based on whether it is 'click' or 'hover'
-  const ActivationIcon =
-    rawActivation.toLowerCase() === 'click'
-      ? LuMousePointerClick
-      : LuMousePointer2;
-
-  const fromLabel = sourceTitle ?? edge.source;
-  const toLabel = targetTitle ?? edge.target;
-
-  const technicalItems: string[] = [`Edge id · ${edge.id}`];
-  if (label) technicalItems.push(`Label · ${label}`);
+  const TriggerIcon = LuMousePointer2;
+  const SourceIcon = LuTag;
+  const TargetIcon = LuTag;
+  const RefIcon = attachRef === 'viz' ? LuSettings2 : LuDatabase;
 
   return (
     <EdgesMenu>
-      {/* Title / header */}
-      <div style={{ fontWeight: 700, textAlign: 'center' }}>Tooltip Edge</div>
+      <div
+        style={{
+          fontWeight: 700,
+          textAlign: 'center',
+          marginBottom: 16,
+          color: '#333',
+          fontSize: '15px',
+          padding: '0 36px',
+          lineHeight: '1.3',
+        }}
+      >
+        Tooltip Edge
+      </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <SectionTitle>Properties</SectionTitle>
-        {/* You can also give the Edge Type an icon if you like, usually LuTag or LuInfo */}
-        <TypeField value="Tooltip" label="Edge type" icon={LuInfo} />
-
-        <SectionTitle>Connection</SectionTitle>
-
-        {/* Fixed Icon: Visualization */}
+        <SectionTitle>Configuration</SectionTitle>
         <TypeField
-          value={fromLabel}
-          label="Source"
-          icon={LuChartColumnDecreasing}
+          value={formattedActivation}
+          label="Trigger"
+          icon={TriggerIcon}
         />
+        <TypeField value={attachedToLabel} label="Attached To" icon={RefIcon} />
+        {attachValue && (
+          <TypeField
+            value={attachValue}
+            label="Required Value"
+            icon={LuSettings2}
+          />
+        )}
 
-        {/* Fixed Icon: Tooltip */}
-        <TypeField value={toLabel} label="Target" icon={LuInfo} />
-
-        {/* Dynamic Icon: Click vs Hover */}
-        <TypeField
-          value={activationLabel}
-          label="Activation"
-          icon={ActivationIcon}
-        />
+        <SectionTitle>Connection Targets</SectionTitle>
+        <TypeField value={sourceTitle} label="From" icon={SourceIcon} />
+        <TypeField value={targetTitle} label="To" icon={TargetIcon} />
       </div>
 
       {onDelete && (
-        <div
-          style={{
-            marginTop: 'auto',
-            paddingTop: 12,
-          }}
-        >
+        <div style={{ marginTop: 'auto', paddingTop: 12 }}>
           <button
             type="button"
             onClick={onDelete}
             style={{
-              marginTop: 12,
               width: '100%',
               padding: '8px 10px',
               borderRadius: 8,
               border: '1px solid #ef4444',
-              color: '#ef4444',
               background: 'white',
+              color: '#ef4444',
+              fontSize: 13,
               cursor: 'pointer',
+              fontWeight: 500,
             }}
           >
             Delete tooltip edge
