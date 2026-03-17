@@ -85,7 +85,7 @@ export function useGlobalEvents({
         nds.map((n) => ({
           ...n,
           selected: n.id === nodeId,
-        }))
+        })),
       );
       setEdges((eds) => eds.map((e) => ({ ...e, selected: false })));
       setSelectedId(nodeId);
@@ -94,12 +94,12 @@ export function useGlobalEvents({
 
     window.addEventListener(
       'designer:select-node',
-      onSelectNode as EventListener
+      onSelectNode as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:select-node',
-        onSelectNode as EventListener
+        onSelectNode as EventListener,
       );
   }, [setNodes, setEdges, setSelectedId, setSelectedEdgeId]);
 
@@ -113,7 +113,7 @@ export function useGlobalEvents({
           n.data?.kind === 'Tooltip' &&
           (n.data as any).attachedTo === parentId &&
           `${n.data.badge ? n.data.badge + ' ' : ''}${n.data.title || ''}` ===
-            label
+            label,
       );
       if (target) {
         setNodes((nds) =>
@@ -121,7 +121,7 @@ export function useGlobalEvents({
             ...n,
             selected: n.id === target.id,
             hidden: n.id === target.id ? false : n.hidden,
-          }))
+          })),
         );
         setEdges((eds) => eds.map((e) => ({ ...e, selected: false })));
         setSelectedEdgeId(null);
@@ -130,12 +130,12 @@ export function useGlobalEvents({
     };
     window.addEventListener(
       'designer:select-tooltip',
-      onSelectTooltip as EventListener
+      onSelectTooltip as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:select-tooltip',
-        onSelectTooltip as EventListener
+        onSelectTooltip as EventListener,
       );
   }, [nodes, setNodes, setEdges, setSelectedId, setSelectedEdgeId]);
 
@@ -167,10 +167,10 @@ export function useGlobalEvents({
 
       if (targetEdge) {
         setNodes((nds) =>
-          nds.map((n) => (n.selected ? { ...n, selected: false } : n))
+          nds.map((n) => (n.selected ? { ...n, selected: false } : n)),
         );
         setEdges((eds) =>
-          eds.map((e) => ({ ...e, selected: e.id === targetEdge.id }))
+          eds.map((e) => ({ ...e, selected: e.id === targetEdge.id })),
         );
         setSelectedId(null);
         setSelectedEdgeId(targetEdge.id);
@@ -178,12 +178,12 @@ export function useGlobalEvents({
     };
     window.addEventListener(
       'designer:select-interaction',
-      onSelectInteraction as EventListener
+      onSelectInteraction as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:select-interaction',
-        onSelectInteraction as EventListener
+        onSelectInteraction as EventListener,
       );
   }, [edges, setNodes, setEdges, setSelectedId, setSelectedEdgeId]);
 
@@ -196,12 +196,12 @@ export function useGlobalEvents({
     };
     window.addEventListener(
       'designer:select-edge',
-      onSelectEdge as EventListener
+      onSelectEdge as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:select-edge',
-        onSelectEdge as EventListener
+        onSelectEdge as EventListener,
       );
   }, [setSelectedId, setSelectedEdgeId]);
 
@@ -218,18 +218,18 @@ export function useGlobalEvents({
                 data: {
                   ...n.data,
                   visualVars: Array.from(
-                    new Set([...((n.data as any).visualVars || []), ...vars])
+                    new Set([...((n.data as any).visualVars || []), ...vars]),
                   ),
                 },
-              }
-        )
+              },
+        ),
       );
     }
     window.addEventListener('designer:ensure-visual-vars', onEnsureVV as any);
     return () =>
       window.removeEventListener(
         'designer:ensure-visual-vars',
-        onEnsureVV as any
+        onEnsureVV as any,
       );
   }, [setNodes, takeSnapshot]);
 
@@ -253,12 +253,12 @@ export function useGlobalEvents({
     }
     window.addEventListener(
       'designer:open-visualvars',
-      onOpenVisualVars as EventListener
+      onOpenVisualVars as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:open-visualvars',
-        onOpenVisualVars as EventListener
+        onOpenVisualVars as EventListener,
       );
   }, [nodes, openModal, closeModal]);
 
@@ -268,12 +268,12 @@ export function useGlobalEvents({
     }
     window.addEventListener(
       'designer:patch-node-data',
-      onPatch as EventListener
+      onPatch as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:patch-node-data',
-        onPatch as EventListener
+        onPatch as EventListener,
       );
   }, [updateNodeById]);
 
@@ -285,7 +285,7 @@ export function useGlobalEvents({
     return () =>
       window.removeEventListener(
         'designer:add-component',
-        onAdd as EventListener
+        onAdd as EventListener,
       );
   }, [createChildInParent]);
 
@@ -303,10 +303,10 @@ export function useGlobalEvents({
         const innerWidth = Math.max(0, pW - PAD_X * 2);
         const cols = Math.max(
           1,
-          Math.floor((innerWidth + GRID_GAP) / (gSize.width + GRID_GAP))
+          Math.floor((innerWidth + GRID_GAP) / (gSize.width + GRID_GAP)),
         );
         const existing = all.filter(
-          (n) => n.parentNode === parentId && (n.data as any)?.kind === 'Graph'
+          (n) => n.parentNode === parentId && (n.data as any)?.kind === 'Graph',
         );
         graphTypes.forEach((gt: GraphType, idx: number) => {
           const reuse = existing[idx];
@@ -342,12 +342,12 @@ export function useGlobalEvents({
     }
     window.addEventListener(
       'designer:add-graphs',
-      onAddGraphs as EventListener
+      onAddGraphs as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:add-graphs',
-        onAddGraphs as EventListener
+        onAddGraphs as EventListener,
       );
   }, [setNodes, takeSnapshot, applyConstraints]);
 
@@ -361,7 +361,7 @@ export function useGlobalEvents({
         const parent = all.find((n) => n.id === parentId);
         if (!parent) return nds;
         const existing = all.filter(
-          (n) => n.parentNode === parentId && (n.data as any)?.kind === 'Graph'
+          (n) => n.parentNode === parentId && (n.data as any)?.kind === 'Graph',
         );
         const toRemoveIds = existing
           .filter((n) => !new Set(graphTypes).has((n.data as any).graphType))
@@ -373,14 +373,14 @@ export function useGlobalEvents({
         const innerWidth = Math.max(0, pW - PAD_X * 2);
         const cols = Math.max(
           1,
-          Math.floor((innerWidth + GRID_GAP) / (gSize.width + GRID_GAP))
+          Math.floor((innerWidth + GRID_GAP) / (gSize.width + GRID_GAP)),
         );
         const kept = all.filter(
-          (n) => n.parentNode === parentId && (n.data as any)?.kind === 'Graph'
+          (n) => n.parentNode === parentId && (n.data as any)?.kind === 'Graph',
         );
         const existingMap = new Set(kept.map((k) => (k.data as any).graphType));
         const needToAdd = graphTypes.filter(
-          (gt: GraphType) => !existingMap.has(gt)
+          (gt: GraphType) => !existingMap.has(gt),
         );
 
         needToAdd.forEach((gt: GraphType, i: number) => {
@@ -410,19 +410,19 @@ export function useGlobalEvents({
                 ...n,
                 data: { ...n.data, graphTypes: graphTypes.slice() },
               } as any)
-            : n
+            : n,
         );
         return applyConstraints(all);
       });
     }
     window.addEventListener(
       'designer:edit-graphs',
-      onEditGraphs as EventListener
+      onEditGraphs as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:edit-graphs',
-        onEditGraphs as EventListener
+        onEditGraphs as EventListener,
       );
   }, [setNodes, takeSnapshot, applyConstraints]);
 
@@ -433,18 +433,18 @@ export function useGlobalEvents({
       takeSnapshot();
       setNodes((nds) =>
         nds.map((n) =>
-          n.id === nodeId ? { ...n, data: { ...n.data, graphType } } : n
-        )
+          n.id === nodeId ? { ...n, data: { ...n.data, graphType } } : n,
+        ),
       );
     }
     window.addEventListener(
       'designer:set-graph-type',
-      onSetGraphType as EventListener
+      onSetGraphType as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:set-graph-type',
-        onSetGraphType as EventListener
+        onSetGraphType as EventListener,
       );
   }, [setNodes, takeSnapshot]);
 
@@ -505,13 +505,13 @@ export function useGlobalEvents({
                   if (detail.targetType === 'data' && detail.targetDataRef) {
                     const attrId = detail.targetDataRef;
                     const targetNode = nodes.find(
-                      (n) => n.id === detail.targetId
+                      (n) => n.id === detail.targetId,
                     );
 
                     if (targetNode) {
                       const rawDataList = (targetNode.data as any)?.data || [];
                       const itemIndex = rawDataList.findIndex(
-                        (it: any) => it.id === attrId
+                        (it: any) => it.id === attrId,
                       );
 
                       if (itemIndex > -1) {
@@ -571,7 +571,7 @@ export function useGlobalEvents({
 
               setNodes((nds) => {
                 let all = nds.map((n) =>
-                  nodesToUpdate.has(n.id) ? nodesToUpdate.get(n.id) : n
+                  nodesToUpdate.has(n.id) ? nodesToUpdate.get(n.id) : n,
                 );
                 if (newDashboardNode) all.push(newDashboardNode);
                 const idx = all.findIndex((n) => n.id === sourceId);
@@ -603,8 +603,8 @@ export function useGlobalEvents({
                 const sourceHandleId = isParameter
                   ? null
                   : sourceType === 'component'
-                  ? `${sourceId}:act:${trigger}`
-                  : `data:${sourceDataRef}:${trigger}`;
+                    ? `${sourceId}:act:${trigger}`
+                    : `data:${sourceDataRef}:${trigger}`;
                 const add = finalTargetDetailsList.map((detail) => {
                   const tid = detail.targetId;
                   const targetHandle =
@@ -642,12 +642,12 @@ export function useGlobalEvents({
     }
     window.addEventListener(
       'designer:open-interactions',
-      onOpenInteractions as EventListener
+      onOpenInteractions as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:open-interactions',
-        onOpenInteractions as EventListener
+        onOpenInteractions as EventListener,
       );
   }, [nodes, openModal, closeModal, setNodes, setEdges]);
 
@@ -701,7 +701,7 @@ export function useGlobalEvents({
                           ],
                         },
                       }
-                    : x
+                    : x,
                 );
               });
 
@@ -733,12 +733,12 @@ export function useGlobalEvents({
     }
     window.addEventListener(
       'designer:open-tooltips',
-      onOpenTooltips as EventListener
+      onOpenTooltips as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:open-tooltips',
-        onOpenTooltips as EventListener
+        onOpenTooltips as EventListener,
       );
   }, [nodes, selectedId, openModal, closeModal, setNodes, setEdges]);
 
@@ -786,12 +786,12 @@ export function useGlobalEvents({
 
     window.addEventListener(
       'designer:parameter-value-change',
-      onParamChange as EventListener
+      onParamChange as EventListener,
     );
     return () =>
       window.removeEventListener(
         'designer:parameter-value-change',
-        onParamChange as EventListener
+        onParamChange as EventListener,
       );
   }, [nodes, edges, setNodes, setEdges, takeSnapshot]);
 }

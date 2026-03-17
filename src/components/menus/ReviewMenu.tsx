@@ -1,6 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import type { Review } from '../../domain/types';
-import { SectionTitle, NameField } from '../menus/sections';
+import {
+  SectionTitle,
+  NameField,
+  ListSection,
+  type StyledListItem,
+} from '../menus/sections';
 import {
   LuCheck,
   LuTrash2,
@@ -47,6 +52,8 @@ function PriorityPill({ level }: { level: Review['priority'] }) {
 export default function ReviewMenu({
   targetLabel,
   reviews,
+  node,
+  nodeNames,
   onCreate,
   onToggle,
   onDelete,
@@ -57,6 +64,9 @@ export default function ReviewMenu({
   targetLabel?: string;
   sourceLabel?: string;
   reviews: Review[];
+  node?: any;
+  nodeNames?: Record<string, string>;
+  onNavigate?: (id: string) => void;
   onCreate: (
     text: string,
     priority: Review['priority'],
@@ -171,6 +181,54 @@ export default function ReviewMenu({
 
   const canSaveEdit = !!editText.trim();
 
+  // --- FORMAT INTERACTIONS FOR LIST SECTION ---
+  const interactions = Array.isArray(node?.data?.interactions)
+    ? (node.data.interactions as any[])
+    : [];
+
+  const interactionListItems: (StyledListItem & {
+    _interactionId: string;
+    _targetId?: string;
+    _targetDataRef?: string;
+  })[] = [];
+
+  interactions.forEach((ix) => {
+    if (ix.targetDetails && ix.targetDetails.length > 0) {
+      ix.targetDetails.forEach((detail: any) => {
+        const targetName =
+          nodeNames?.[detail.targetId] || detail.targetId || 'Unknown';
+        let subtitle = `Target: ${targetName}`;
+        if (detail.targetDataRef) subtitle += ' (Data)';
+        interactionListItems.push({
+          name: ix.name,
+          badge: ix.result,
+          subtitle,
+          _interactionId: ix.id,
+          _targetId: detail.targetId,
+          _targetDataRef: detail.targetDataRef,
+        });
+      });
+    } else if (ix.targets && ix.targets.length > 0) {
+      ix.targets.forEach((targetId: string) => {
+        const targetName = nodeNames?.[targetId] || targetId;
+        interactionListItems.push({
+          name: ix.name,
+          badge: ix.result,
+          subtitle: `Target: ${targetName}`,
+          _interactionId: ix.id,
+          _targetId: targetId,
+        });
+      });
+    } else {
+      interactionListItems.push({
+        name: ix.name,
+        badge: ix.result,
+        subtitle: '(No target)',
+        _interactionId: ix.id,
+      });
+    }
+  });
+
   return (
     <div style={{ paddingBottom: 20, width: '100%', boxSizing: 'border-box' }}>
       <div style={{ fontWeight: 700, textAlign: 'center', marginBottom: 12 }}>
@@ -178,7 +236,7 @@ export default function ReviewMenu({
       </div>
 
       <SectionTitle>Details</SectionTitle>
-      <div style={{ display: 'grid', gap: 8 }}>
+      <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
         <NameField
           label="Component"
           placeholder=""
@@ -187,6 +245,32 @@ export default function ReviewMenu({
           disabled
         />
       </div>
+
+      {/* --- REPLACED WITH LIST SECTION --- */}
+      {interactionListItems.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <ListSection
+            title="Interaction list"
+            items={interactionListItems}
+            // --- DELETED onAdd and addTooltip PROPS FROM HERE ---
+
+            onItemClick={(i) => {
+              const item = interactionListItems[i];
+              if (item) {
+                window.dispatchEvent(
+                  new CustomEvent('designer:select-interaction', {
+                    detail: {
+                      interactionId: item._interactionId,
+                      targetId: item._targetId,
+                      targetDataRef: item._targetDataRef,
+                    },
+                  }),
+                );
+              }
+            }}
+          />
+        </div>
+      )}
 
       <SectionTitle>Add Review</SectionTitle>
       <div
@@ -242,8 +326,8 @@ export default function ReviewMenu({
             placeholder="What should be improved?"
             style={{
               ...inputStyle,
-              resize: 'none', // Prevent manual resizing since it's auto-sized
-              overflow: 'hidden', // Hide scrollbar during resizing
+              resize: 'none',
+              overflow: 'hidden',
               fontFamily: 'inherit',
             }}
           />
@@ -372,7 +456,7 @@ export default function ReviewMenu({
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: '1fr', // Changed to single column
+                      gridTemplateColumns: '1fr',
                       gap: 8,
                     }}
                   >
@@ -397,8 +481,8 @@ export default function ReviewMenu({
                     rows={3}
                     style={{
                       ...inputStyle,
-                      resize: 'none', // Prevent manual resizing
-                      overflow: 'hidden', // Hide scrollbar during resizing
+                      resize: 'none',
+                      overflow: 'hidden',
                     }}
                   />
 
@@ -446,7 +530,7 @@ export default function ReviewMenu({
                 </div>
               )}
 
-              {/* REPLIES SECTION (unchanged) */}
+              {/* REPLIES SECTION */}
               {r.replies && r.replies.length > 0 && (
                 <div
                   style={{
@@ -512,7 +596,7 @@ export default function ReviewMenu({
                 </div>
               )}
 
-              {/* REPLY INPUT (unchanged) */}
+              {/* REPLY INPUT */}
               {isReplying && (
                 <div
                   style={{
@@ -587,7 +671,7 @@ export default function ReviewMenu({
                 </div>
               )}
 
-              {/* FOOTER ACTIONS (unchanged) */}
+              {/* FOOTER ACTIONS */}
               {!isEditing && (
                 <div
                   style={{

@@ -16,13 +16,8 @@ function App() {
   };
 
   const handleGoHome = () => {
-    // Optional: add a confirm dialog if you want to prevent accidental exits
-    if (
-      confirm('Are you sure you want to exit? Unsaved changes will be lost.')
-    ) {
-      setView('home');
-      setInitialData(null);
-    }
+    setView('home');
+    setInitialData(null);
   };
 
   if (view === 'editor') {

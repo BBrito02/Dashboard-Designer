@@ -64,6 +64,7 @@ import SavePopup from './components/popups/SavePopup';
 import InteractionPopup from './components/popups/InteractionPopup';
 import TooltipPopup from './components/popups/TooltipPopup';
 import GraphTypePopup from './components/popups/GraphTypePopup';
+import HomePopup from './components/popups/HomePopup';
 
 import NodeGhost from './canvas/nodes/NodeGhost';
 import InteractionEdgeMenu from './components/menus/InteractionEdgeMenu';
@@ -2223,7 +2224,21 @@ export default function Editor({
           >
             {onGoHome && (
               <button
-                onClick={onGoHome}
+                onClick={() => {
+                  // --- OPEN CUSTOM MODAL INSTEAD OF DIRECTLY CALLING onGoHome ---
+                  openModal({
+                    title: 'Exit to Home',
+                    node: (
+                      <HomePopup
+                        onCancel={closeModal}
+                        onConfirm={() => {
+                          closeModal();
+                          onGoHome(); // Trigger the actual exit AFTER they confirm
+                        }}
+                      />
+                    ),
+                  });
+                }}
                 title="Go to Home Menu"
                 style={{
                   padding: '6px 10px',
@@ -2545,7 +2560,10 @@ export default function Editor({
                       id: selectedEdge.id,
                       data: {
                         kind: 'Visualization',
-                        title: `Edge ${selectedEdge.id}`,
+                        title:
+                          (selectedEdge.data as any)?.label ||
+                          (selectedEdge.data as any)?.name ||
+                          'Interaction Edge',
                       },
                       position: { x: 0, y: 0 },
                       type: 'visualization',

@@ -191,7 +191,7 @@ export default function Home({ onStart }: HomeProps) {
                 marginBottom: '20px',
               }}
             >
-              Start from a Template
+              Start from an Example
             </h3>
             <div
               style={{

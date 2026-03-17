@@ -318,6 +318,9 @@ export default function ComponentsMenu(props: Props) {
             }
             sourceLabel={reviewSourceLabel}
             reviews={reviews}
+            node={panelNode}
+            nodeNames={nodeNames}
+            onNavigate={onNavigate}
             // --- FIX START: Removed 'category' from args and payload ---
             onCreate={(text, priority, author) =>
               onReviewCreate?.({
