@@ -13,7 +13,6 @@ A ferramenta permite desenhar e prototipar Dashboards de Visualização de Infor
 ## FUNCIONALIDADES PRINCIPAIS
 
 1. Gestão de Layout e Composição
-
    - Drag-and-Drop: Construção do dashboard arrastando componentes do menu lateral diretamente para o canvas.
    - Criação de Hierarquias: Possibilidade de colocar componentes dentro de outros (ex: Gráficos dentro de Visualizações) para organizar o layout.
    - Métodos de Composição: A hierarquia pode ser criada de duas formas:
@@ -21,13 +20,11 @@ A ferramenta permite desenhar e prototipar Dashboards de Visualização de Infor
      b) Utilizando o menu contextual ("Actions") de um componente existente para adicionar filhos.
 
 2. Configuração de Dados e Visualização
-
    - Definição de Dados: Interface para adicionar e listar atributos de dados (Data Items) associados a cada componente.
    - Gramática Visual: Seleção do tipo de gráfico (Bar, Line, Scatter, etc.) e mapeamento de atributos de dados para variáveis visuais (Cor, Tamanho, Forma, Texto).
    - Imagens de Referência: Funcionalidade para carregar screenshots reais de gráficos já existentes (ex: do Tableau ou PowerBI) para substituir o ícone padrão, permitindo um protótipo visualmente fiel ao resultado final.
 
 3. Modelação de Interatividade
-
    - Criação de Fluxos: Sistema visual de criação de ligações para ligar componentes e definir dependências.
    - Especificação de Interações: Configuração detalhada da ação ("Click" ou "Hover") e do resultado no sistema (ex: Filtragem, Highlight, Dashboard, Link).
    - Tooltips Dinâmicos: Criação de componentes de Tooltip e associação visual direta a gráficos específicos.
@@ -36,9 +33,17 @@ A ferramenta permite desenhar e prototipar Dashboards de Visualização de Infor
    - Guardar/Carregar: O sistema exporta o projeto num formato (.dashboard).
    - Bundle Autocontido: O ficheiro guardado contém não só a estrutura lógica, mas também todas as imagens carregadas pelo utilizador, permitindo abrir e editar o projeto em qualquer computador sem dependências externas ou perda de dados.
 
+## COMO EXECUTAR O PROJETO
+
+**Versão Online**
+
+A ferramenta está disponível para utilização imediata no browser, sem necessidade de intalação local:
+
+- https://bbrito02.github.io/Dashboard-Designer/
+
 ---
 
-## COMO EXECUTAR O PROJETO
+**Versão Local**
 
 **Requisitos:** Node.js instalado (versão LTS recomendada).
 
